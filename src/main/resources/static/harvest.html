@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>数据采集器</title>
+
+    <link rel="stylesheet" type="text/css" href="./css/sidebar.css">
+    <link rel="stylesheet" type="text/css" href="./css/commentlist.css">
+    <script src="./js/sidebar.js"></script>
+    <script src="https://cdn.staticfile.org/jquery/3.5.1/jquery.min.js"></script>
+    <script src="./js/axios-0.18.0.js"></script>
+
+</head>
+<style>
+    /* 标题栏样式 */
+    .header {
+        /*height: 50px;*/
+        text-align: center;
+        font-size: 24px;
+        line-height: 50px;
+        background-color: #555;
+        color: white;
+        padding: 20px;
+    }
+
+    /* 容器样式 */
+    .container {
+        display: flex;
+        flex-direction: row;
+        height: calc(100vh - 50px); /* 让容器填满剩余的空间 */
+    }
+
+    .card {
+        /*width: 300px;*/
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    input[type="text"] {
+        width: 100%;
+        margin-bottom: 10px;
+        padding: 5px;
+    }
+
+    .btn-container {
+        display: flex;
+        justify-content: center;
+    }
+
+    .btn-container button {
+        margin: 0 5px;
+        margin-bottom: 5px;
+    }
+
+
+    .dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+
+    .red {
+        background-color: red;
+    }
+
+    .yellow {
+        background-color: yellow;
+    }
+
+    .green {
+        background-color: green;
+    }
+</style>
+<body>
+
+<div class="header">
+    <h1 style="text-align: center">Dy数据收集系统-采集器</h1>
+    <span>          作者————@他看到了自己</span>
+</div>
+
+<div class="container">
+    <div id="sidebar">
+        <ul>
+            <li><a href="./commentList.html">评论列表</a></li>
+            <li><a href="./harvest.html">数据采集器</a></li>
+            <li><a href="./anayazer.html">数据分析器</a></li>
+        </ul>
+    </div>
+
+
+    <div id="page-container">
+        <div class="card">
+            <h2>评论前端收集器</h2>
+            <input type="text" id="inputField-1" placeholder="输入目标视频链接,如果输入为空表示随机收集~~">
+            <div class="btn-container">
+                <button id="startBtn-1">开始收集前端评论</button>
+<!--                <button id="pauseBtn-1">暂停</button>-->
+                <button id="stopBtn-1">停止收集</button>
+            </div>
+
+            <span class="dot red" id="redDot"></span>
+<!--            <span class="dot yellow" id="yellowDot"></span>-->
+            <span class="dot green" id="greenDot"></span>
+        </div>
+
+        <div class="card">
+            <h2>评论后端采集处理器</h2>
+
+            <div class="btn-container">
+                <button id="startBtn-2">开始处理评论数据</button>
+                <button id="pauseBtn-2">暂停处理</button>
+                <button id="stopBtn-2">停止处理</button>
+            </div>
+
+            <div id="curCNT" style="display: none">xx</div>
+            <span class="dot red" id="redDot2"></span>
+            <span class="dot yellow" id="yellowDot2"></span>
+            <span class="dot green" id="greenDot2"></span>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.onload=function (){
+        setInterval(function() {
+            axios.get("/curDealingCounts").then((res)=>{
+                if (res.data.success){
+                    var cnt=res.data.data
+                    if (cnt>0){
+                        var element = document.getElementById("curCNT");
+                        if (element.style.display === "none") {
+                            element.style.display = "block";
+                        }
+                        element.innerText=res.data.msg
+                        // alert(res.data.msg)
+                    }
+                    else {
+                        stopLight2()
+                    }
+                }
+            }).catch((error)=>{
+                if (error == "Error: Request failed with status code 403"){
+                    alert("无操作权限")
+                }
+            });
+        }, 10000);
+
+    }
+    // 获取按钮和输入框的元素
+    var startBtn1 = document.getElementById("startBtn-1");
+    // var pauseBtn1 = document.getElementById("pauseBtn-1");
+    var stopBtn1 = document.getElementById("stopBtn-1");
+    var inputField1 = document.getElementById("inputField-1");
+
+    // 绑定按钮点击事件
+    startBtn1.addEventListener("click", start1);
+    // pauseBtn1.addEventListener("click", pause1);
+    stopBtn1.addEventListener("click", stop1);
+
+    var startBtn2 = document.getElementById("startBtn-2");
+    // var pauseBtn2 = document.getElementById("pauseBtn-2");
+    var stopBtn2 = document.getElementById("stopBtn-2");
+    var inputField2 = document.getElementById("inputField-2");
+
+    // 绑定按钮点击事件
+    startBtn2.addEventListener("click", start2);
+    // pauseBtn2.addEventListener("click", pause2);
+    stopBtn2.addEventListener("click", stop2);
+
+
+    var redDot = document.getElementById("redDot");
+    // var yellowDot = document.getElementById("yellowDot");
+    var greenDot = document.getElementById("greenDot");
+    var redDot2 = document.getElementById("redDot2");
+    var yellowDot2 = document.getElementById("yellowDot2");
+    var greenDot2 = document.getElementById("greenDot2");
+
+    function startLight() {
+        redDot.classList.remove("red");
+        // yellowDot.classList.remove("yellow");
+        greenDot.classList.remove("green");
+
+        // 在这里执行开始操作
+        greenDot.classList.add("green");
+    }
+
+    function pauseLight() {
+        redDot.classList.remove("red");
+        // yellowDot.classList.remove("yellow");
+        greenDot.classList.remove("green");
+        // 在这里执行暂停操作
+        yellowDot.classList.add("yellow");
+    }
+
+    function stopLight() {
+        redDot.classList.remove("red");
+        // yellowDot.classList.remove("yellow");
+        greenDot.classList.remove("green");
+        // 在这里执行停止操作
+        redDot.classList.add("red");
+    }
+
+    function startLight2() {
+        redDot2.classList.remove("red");
+        yellowDot2.classList.remove("yellow");
+        greenDot2.classList.remove("green");
+        // 在这里执行开始操作
+        greenDot2.classList.add("green");
+
+
+    }
+
+    function pauseLight2() {
+        redDot2.classList.remove("red");
+        yellowDot2.classList.remove("yellow");
+        greenDot2.classList.remove("green");
+        // 在这里执行暂停操作
+        yellowDot2.classList.add("yellow");
+    }
+
+    function stopLight2() {
+        redDot2.classList.remove("red");
+        yellowDot2.classList.remove("yellow");
+        greenDot2.classList.remove("green");
+        // 在这里执行停止操作
+        redDot2.classList.add("red");
+    }
+
+    // 开始按钮点击事件处理函数
+    function start1() {
+        startLight()
+        var inputText = inputField1.value;
+        var url="https://www.douyin.com/discover?modal_id="+inputText
+        // 在这里执行开始操作
+        axios.get("/startHarvestUrl?url="+url).then((res)=>{
+            if (res.data.success){
+                alert(res.data.msg)
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+    }
+
+    // 暂停按钮点击事件处理函数
+    function pause1() {
+
+        pauseLight()
+    }
+
+    // 停止按钮点击事件处理函数
+    function stop1() {
+        stopLight()
+        // 在这里执行开始操作
+        axios.get("/stopHarvestUrl").then((res)=>{
+            if (res.data.success){
+                alert(res.data.msg)
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+    }
+
+
+
+     // 开始按钮点击事件处理函数
+    function start2() {
+        startLight2()
+        axios.get("/startHarvestComments").then((res)=>{
+            if (res.data.success){
+                alert(res.data.msg)
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+
+
+    }
+
+    // 暂停按钮点击事件处理函数
+    function pause2() {
+        pauseLight2()
+        axios.get("/pauseHarvestComments").then((res)=>{
+            if (res.data.success){
+                alert(res.data.msg)
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+    }
+
+    // 停止按钮点击事件处理函数
+    function stop2() {
+        stopLight2()
+        axios.get("/stopHarvestComments").then((res)=>{
+            if (res.data.success){
+                alert(res.data.msg)
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+    }
+
+
+</script>
+
+</body>
+</html>

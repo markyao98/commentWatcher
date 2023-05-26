@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<script>
+    function buildTree(data,aid){
+        const rootElement = document.getElementById('tree-root');
+
+        // 获取所有子节点
+        const childNodes = rootElement.childNodes;
+
+        // 循环遍历所有子节点并删除
+        for (let i = childNodes.length - 1; i >= 0; i--) {
+            rootElement.removeChild(childNodes[i]);
+        }
+        // 添加收起按钮
+        const collapseButton = document.createElement('button');
+        collapseButton.textContent = '全部收起';
+        collapseButton.classList.add('collapse-button');
+        rootElement.appendChild(collapseButton);
+
+        // 定义点击收起按钮的行为
+        collapseButton.addEventListener('click', () => {
+            const commentsLists = document.querySelectorAll('.comments-list');
+            commentsLists.forEach(list => {
+                list.style.display = 'none'; // 将所有评论列表隐藏
+            });
+        });
+
+
+        data.forEach(entry => {
+
+            const time = Object.keys(entry)[0]; // 获取时间
+            const comments = entry[time]; // 获取评论列表
+
+            // 创建时间节点
+            const timeNode = document.createElement('div');
+            timeNode.textContent = `${time} (${comments.length})`; // 显示时间和评论数量
+            timeNode.classList.add('time-node');
+            rootElement.appendChild(timeNode);
+
+            // 创建评论列表
+            const commentsList = document.createElement('ul');
+            commentsList.classList.add('comments-list');
+            commentsList.style.display = 'none'; // 初始状态隐藏评论列表
+
+            // 创建<a>标签
+            const link = document.createElement('a');
+            var searchParams = 'searchType=4&searchMsg=' + encodeURIComponent(time)+'&awemeId='+encodeURIComponent(aid);
+            link.href = "/commentList.html?"+searchParams+""; // 替换xxxx为实际的awemeId
+            link.target="_blank"
+            link.textContent = '查看该时间段的评论';
+
+            // 将<a>标签添加到评论列表容器中的最上方
+            commentsList.prepend(link);
+            // 遍历评论列表
+            comments.forEach(comment => {
+                const text =" 评论内容: 【 "+ comment.text +" 】  ip信息: 【 "+comment.ipLabel+" 】"+" 具体评论时间: 【 "+comment.createTime+" 】";
+                // 创建评论项
+                const commentItem = document.createElement('li');
+                commentItem.textContent = text;
+                commentsList.appendChild(commentItem);
+            });
+
+            rootElement.appendChild(commentsList);
+            // 点击时间节点时展开或折叠评论列表
+            timeNode.addEventListener('click', () => {
+                commentsList.style.display = commentsList.style.display === 'none' ? 'block' : 'none'; // 切换隐藏和显示状态
+            });
+
+            timeNode.addEventListener('mouseenter', () => {
+                timeNode.classList.add('hovered'); // 添加鼠标悬停样式
+            });
+
+            timeNode.addEventListener('mouseleave', () => {
+                timeNode.classList.remove('hovered'); // 移除鼠标悬停样式
+            });
+        });
+
+    }
+
+    function buildUserTree(data){
+        const rootElement = document.getElementById('tree-user-root');
+
+        // 获取所有子节点
+        const childNodes = rootElement.childNodes;
+
+        // 循环遍历所有子节点并删除
+        for (let i = childNodes.length - 1; i >= 0; i--) {
+            rootElement.removeChild(childNodes[i]);
+        }
+        // 添加收起按钮
+        const collapseButton = document.createElement('button');
+        collapseButton.textContent = '全部收起';
+        collapseButton.classList.add('collapse-button');
+        rootElement.appendChild(collapseButton);
+
+        // 定义点击收起按钮的行为
+        collapseButton.addEventListener('click', () => {
+            const commentsLists = document.querySelectorAll('.comments-users-list');
+            commentsLists.forEach(list => {
+                list.style.display = 'none'; // 将所有评论列表隐藏
+            });
+        });
+
+
+        data.forEach(entry => {
+
+            // const time = Object.keys(entry)[0]; // 获取时间
+            // const comments = entry[time]; // 获取评论列表
+            const user=entry.user
+            const comments=entry.commentDetailList
+
+            var name=user.nickname.substr(0,5)+"某某"
+            var size=comments.length
+            // 创建用户节点
+            const userNode = document.createElement('div');
+            // userNode.textContent = `${user.nickname} (${user.avatar})`; // 显示时间和评论数量
+            userNode.textContent = name+" 发布数量( "+size+" )"; //
+            const userImgNode = document.createElement('img');
+            userImgNode.src=user.avatar
+            userImgNode.style.width='30px'
+            userImgNode.style.height='30px'
+            userImgNode.style.borderRadius = '50%';  // 设置圆形状
+
+            userNode.appendChild(userImgNode);
+            userNode.classList.add('user-node');
+            rootElement.appendChild(userNode);
+
+            // 创建评论列表
+            const commentsList = document.createElement('ul');
+            commentsList.classList.add('comments-users-list');
+            commentsList.style.display = 'none'; // 初始状态隐藏评论列表
+
+
+            // 遍历评论列表
+            comments.forEach(comment => {
+                const text =" 评论内容: 【 "+ comment.text +" 】  ip信息: 【 "+comment.ipLabel+" 】"+" 具体评论时间: 【 "+comment.createTime+" 】"+" 具体视频: 【 "+comment.videoTitle+" 】";
+                // 创建评论项
+                const commentItem = document.createElement('li');
+                commentItem.textContent = text;
+                commentsList.appendChild(commentItem);
+            });
+
+            rootElement.appendChild(commentsList);
+            // 点击时间节点时展开或折叠评论列表
+            userNode.addEventListener('click', () => {
+                commentsList.style.display = commentsList.style.display === 'none' ? 'block' : 'none'; // 切换隐藏和显示状态
+            });
+
+            userNode.addEventListener('mouseenter', () => {
+                userNode.classList.add('hovered'); // 添加鼠标悬停样式
+            });
+
+            userNode.addEventListener('mouseleave', () => {
+                userNode.classList.remove('hovered'); // 移除鼠标悬停样式
+            });
+        });
+
+    }
+</script>
+</body>
+</html>

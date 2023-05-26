@@ -1,0 +1,169 @@
+table {
+    table-layout: fixed;
+    border-collapse: collapse;
+    width: 100%;
+    background-color: #f6f6f6;
+    border-radius: 5px; /* 圆角边框 */
+}
+
+th,
+td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: center;
+    color: #333;
+
+
+    overflow: hidden;
+    text-overflow: ellipsis; /* 省略号表示被省略的文本 */
+    white-space: nowrap; /* 禁止文本换行 */
+
+}
+
+th {
+    background-color: #e5e5e5;
+    /*resize: horizontal;*/
+    /*overflow: auto;*/
+}
+
+tr:nth-child(even) {
+    background-color: #fff;
+}
+
+tr:hover {
+    background-color: #f2f2f2;
+}
+.ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.tooltip {
+    position: fixed;
+    z-index: 999;
+    background-color: black;
+    color: white;
+    padding: 5px;
+    font-size: 18px;
+    border-radius: 3px;
+}
+
+
+
+#pagination-container button,
+#pagination-container span,
+#pagination-container input {
+    margin: 0 5px;
+}
+
+#pagination-container .current-page {
+    font-weight: bold;
+}
+
+/* 页码部分的容器样式 */
+#pagination-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+/* 分页按钮的样式 */
+#pagination-container button {
+    color: #fff;
+    background-color: cadetblue;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+    margin-right: 5px;
+    margin-bottom: 5px;
+    transition: all 0.3s ease;
+}
+
+/* 当前页码按钮的样式 */
+#pagination-container .current-page {
+    background-color: cadetblue;
+}
+
+/* 不可用状态的按钮样式 */
+#pagination-container button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* 输入框和按钮的样式 */
+#pagination-container input {
+    width: 50px;
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-align: center;
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+
+#pagination-container input:focus {
+    outline: none;
+    box-shadow: 0 0 0 1px cadetblue;
+}
+
+#pagination-container input[type="button"] {
+    color: #fff;
+    background-color: cadetblue;
+
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#pagination-container input[type="button"]:hover {
+    background-color: cadetblue;
+
+}
+#pagination-container button {
+    font-size: 16px;
+    border-radius: 50px;
+    padding: 10px 20px;
+    margin-right: 10px;
+}
+th#text, td.comment-text-area {
+    width: 100px;
+    max-width: 100px;
+    white-space: normal;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.comment-text-area:hover {
+    white-space: normal;  /* 换行 */
+    overflow: visible;  /* 显示超出部分 */
+    text-overflow: clip;  /* 超出部分不用省略号表示 */
+}
+
+.comment-text-area:hover::before {
+    content: attr(title);  /* 在悬浮框中显示完整文本 */
+    position: fixed;  /* 绝对定位 */
+    top: 100%;  /* 紧贴文本下方 */
+    left: 50%;  /* 居中显示 */
+    transform: translateX(-50%);  /* 水平居中 */
+    background-color: #333;  /* 悬浮框背景色 */
+    color: #fff;  /* 悬浮框文本颜色 */
+    padding: 5px;  /* 悬浮框内边距 */
+    border-radius: 5px;  /* 悬浮框圆角 */
+    font-size: 18px;  /* 悬浮框字号 */
+    z-index: 1;  /* 显示在表格之上 */
+    white-space: normal;  /* 不换行 */
+    /*white-space: pre-wrap;*/
+}
+
+
+
+
+
+
+

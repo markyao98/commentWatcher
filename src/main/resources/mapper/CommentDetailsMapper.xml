@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.markyao.mapper.CommentDetailsMapper">
+
+    <insert id="insertForId" parameterType="CommentDetails" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO harvest_comment_details (id,aweme_id,cid,ip_label,create_time,digg_count,reply_comment_total,text,is_author_digged)
+        VALUES
+            (#{id}, #{awemeId}, #{cid},#{ipLabel}, #{createTime}, #{diggCount}, #{replyCommentTotal}, #{text}, #{isAuthorDigged})
+    </insert>
+
+    <select id="selectIpModelDesc" parameterType="String" resultType="IpModel" >
+        SELECT ip_label,COUNT(*) AS cnt FROM harvest_comment_details WHERE aweme_id=#{awemeId} GROUP BY ip_label ORDER BY cnt DESC
+    </select>
+
+    <select id="selectIpModelDescByAids" parameterType="String" resultType="IpModel" >
+        SELECT ip_label,COUNT(*) AS cnt FROM harvest_comment_details
+            where aweme_Id in
+            <foreach collection="array" item="aid" index="index" open="(" close=")" separator=",">
+                #{aid}
+            </foreach>
+        GROUP BY ip_label ORDER BY cnt DESC
+    </select>
+    
+    <select id="searchByWord" resultType="Long">
+        SELECT id FROM harvest_comment_details WHERE aweme_id=#{awemeId} AND TEXT LIKE "%"#{query}"%"
+    </select>
+    <select id="searchByIpLabel" resultType="Long">
+        SELECT id FROM harvest_comment_details WHERE aweme_id=#{awemeId} AND ip_label=#{ipLabel}
+    </select>
+     <select id="searchByWordSort" resultType="Long">
+        SELECT id FROM harvest_comment_details WHERE aweme_id=#{awemeId} AND TEXT LIKE "%"#{query}"%" order by #{sortField}
+     </select>
+    <select id="searchByIpLabelSort" resultType="Long">
+        SELECT id FROM harvest_comment_details WHERE aweme_id=#{awemeId} AND ip_label=#{ipLabel} order by #{sortField}
+    </select>
+
+
+</mapper>
