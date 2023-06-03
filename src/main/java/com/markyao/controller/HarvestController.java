@@ -1,16 +1,21 @@
 package com.markyao.controller;
 
 import com.markyao.async.ThreadService;
+import com.markyao.async.ThreadWorker;
 import com.markyao.model.dto.RestData;
 import com.markyao.service.harvest.CommentService;
 import com.markyao.service.harvest.RequestURLService;
+import com.markyao.service.harvest.core.HarvestCommentWorker;
 import com.markyao.service.harvest.impl.RequestURLServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Date;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.markyao.common.States.MONITORING;
 import static com.markyao.service.harvest.CommentService.STOP_HARVEST_COMMENTS;
 
 @RestController
@@ -25,16 +30,35 @@ public class HarvestController {
     ConcurrentHashMap<String,Object>stateMap;
     @Autowired
     ConcurrentHashMap<String,Object>bufMap;
-
-
+    @Autowired
+    HarvestCommentWorker harvestCommentWorker;
+    @Autowired
+    ThreadWorker threadWorker;
+    @Autowired
+    ConcurrentHashMap<String, Date>monitorLivingMap;
     @GetMapping("startHarvestUrl")
     public RestData startHarvestUrl(String url){
         if (stateMap.containsKey(RequestURLServiceImpl.STOP_HARVEST_URL)){
             stateMap.remove(RequestURLServiceImpl.STOP_HARVEST_URL);
         }
-        threadService.startHarvestUrl(url,requestURLService);
+//        requestURLService.start0(url,1,1);
+        threadWorker.startForAid(url);
         return RestData.success(null).setMsg("已通知评论收集系统开始工作~ ");
     }
+
+  @GetMapping("startHarvestUrlAndMonitor")
+    public RestData startHarvestUrlAndMonitor(String url){
+        String aid=url;
+        if (stateMap.containsKey(RequestURLServiceImpl.STOP_HARVEST_URL)){
+            stateMap.remove(RequestURLServiceImpl.STOP_HARVEST_URL);
+        }
+
+        monitorLivingMap.put(aid,new Date());
+//        requestURLService.start0(url,1,1);
+        threadWorker.startForAid0(aid);
+        return RestData.success(null).setMsg("已通知评论收集系统开始工作~ ");
+    }
+
 
     @GetMapping("stopHarvestUrl")
     public RestData stopHarvestUrl(){
@@ -52,7 +76,7 @@ public class HarvestController {
         if (stateMap.containsKey(STOP_HARVEST_COMMENTS)){
             stateMap.remove(STOP_HARVEST_COMMENTS);
         }
-        threadService.deleteOldUrls();
+//        threadService.deleteOldUrls();
         threadService.startHarvestAllComments(commentService);
         return RestData.success(null).setMsg("开始开始开始==已通知评论后端处理系统开始工作~~~  ===开始开始开始 ");
     }

@@ -6,10 +6,12 @@
 
     <link rel="stylesheet" type="text/css" href="./css/sidebar.css">
     <link rel="stylesheet" type="text/css" href="./css/commentlist.css">
+    <link rel="stylesheet" type="text/css" href="./css/manage.css">
+
     <script src="./js/sidebar.js"></script>
     <link rel="stylesheet" href="css/custom-styles.css">
     <script src="./js/axios-0.18.0.js"></script>
-<!--    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha384-eJzj4kuHKnAe5/58ONtmtmZUZyQe9q4jjyOAGD+vjQ6B6-->
+    <!--    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha384-eJzj4kuHKnAe5/58ONtmtmZUZyQe9q4jjyOAGD+vjQ6B6-->
 
 </head>
 <style>
@@ -157,15 +159,29 @@
             <li><a href="./commentList.html">评论列表</a></li>
             <li><a href="./harvest.html">数据采集器</a></li>
             <li><a href="./anayazer.html">数据分析器</a></li>
+            <li><a href="./manage.html">管理页</a></li>
+
         </ul>
     </div>
 
 
     <div id="page-container">
         <div>
-            <select  style="width: 1000px" class="custom-select" id="aweme-select" onchange="getSelectedAwemeId()" multiple>
-                <option value="">请选择</option>
+            <select id="groupSelect" class="custom-select">
+                <option value="-1">请选择分组</option>
             </select>
+            <button onclick="selectGroup()">确认分组</button>
+            <select  style="width: 1000px" class="custom-select" id="aweme-select" onchange="getSelectedAwemeId()" multiple>
+                <option value="">请选择视频</option>
+            </select>
+            <div id="right-card" style="display: none" class="page-right">
+                <ul id="group-info">
+                    <li id="group-img"></li>
+                    <li id="group-title">分组标题</li>
+                    <li id="group-desc">分组描述信息..</li>
+                </ul>
+            </div>
+
             <div style="text-align: center">
                 <br><button style="font-size: large" onclick="singleAnalyzer()">开始分析</button>
             </div>
@@ -190,7 +206,7 @@
             <div class="right-data">
                 <h4>TOP10-20</h4>
             </div>
-<!--            <img src="./imgs/xx.png" width="600" height="600"/>-->
+            <!--            <img src="./imgs/xx.png" width="600" height="600"/>-->
 
         </div>
         <h2 id="top20-one-minute" style="text-align: center">同一分钟内的评论(TOP20)</h2>
@@ -222,13 +238,97 @@
 </div>
 
 <script>
-    window.onload=function (){
-        getGroups()
+
+    function getVideoGroups(){
+        axios.get("/index/groups").then((res)=>{
+            if (res.data.success){
+                var groupList=res.data.data
+                renderGroupList(groupList)
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
     }
-/*
-var searchParams = 'searchType=1&searchMsg=' + encodeURIComponent(text)+'&awemeId='+encodeURIComponent(aid);
-            return '<p><a target="_blank" href="/commentList.html?' + searchParams + '">' + data + '</a></p>';
- */
+    function selectGroup(){
+        var selectElement = document.getElementById("groupSelect");
+        var id=selectElement.value
+        byGroup(id)
+        renderRightCard(id)
+    }
+    function byGroup(data){
+        axios.get("group/byG/"+data).then((res)=>{
+            if (res.data.success){
+                var videoList=res.data.data
+                renderOptionsContainVideoList(videoList)
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+    }
+    function renderRightCard(id){
+        axios.get("groupinfo/"+id).then((res)=>{
+            var imgLi = document.getElementById("group-img");
+            removeChilds(imgLi)
+            if (res.data.success){
+                var groupinfo=res.data.data
+
+                var title=groupinfo.title;
+                var desc=groupinfo.descMsg;
+                var rc = document.getElementById("right-card");
+
+                var imgE = document.createElement("img");
+                imgE.src="./groupsImg/" +groupinfo.img;
+                imgE.classList.add("group-img");
+                imgLi.appendChild(imgE)
+                var gt = document.getElementById("group-title");
+                gt.innerText=title
+                var gd = document.getElementById("group-desc");
+                gd.innerText=desc
+                rc.style.display = rc.style.display== 'none' ? 'block' : 'none';
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+
+
+    }
+    function removeChilds(ele){
+        const childNodes = ele.childNodes;
+
+        // 循环遍历所有子节点并删除
+        for (let i = childNodes.length - 1; i >= 0; i--) {
+            ele.removeChild(childNodes[i]);
+        }
+    }
+    function renderOptionsContainVideoList(vList){
+        renderOptions(vList)
+    }
+    function renderGroupList(data) {
+        var selectElement = document.getElementById("groupSelect");
+        removeChilds(selectElement)
+        for (var i = 0; i < data.length; i++) {
+            var option = document.createElement("option");
+            option.value = data[i].id;
+            option.text = data[i].title;
+            selectElement.appendChild(option);
+        }
+    }
+
+
+    window.onload=function (){
+        getVideoGroups()
+        // getGroups()
+    }
+    /*
+    var searchParams = 'searchType=1&searchMsg=' + encodeURIComponent(text)+'&awemeId='+encodeURIComponent(aid);
+                return '<p><a target="_blank" href="/commentList.html?' + searchParams + '">' + data + '</a></p>';
+     */
     function singleAnalyzer(){
         // console.log(getSelectedAwemeId())
         analyzer(getSelectedAwemeId())
@@ -482,6 +582,7 @@ var searchParams = 'searchType=1&searchMsg=' + encodeURIComponent(text)+'&awemeI
 
     function renderOptions(data) {
         var selectElement = document.getElementById("aweme-select");
+        removeChilds(selectElement)
         for (var i = 0; i < data.length; i++) {
             var option = document.createElement("option");
             option.value = data[i].awemeId;
@@ -658,31 +759,31 @@ var searchParams = 'searchType=1&searchMsg=' + encodeURIComponent(text)+'&awemeI
                     aids: aids.join(',')
                 }
             }).then((res) => {
-                if (res.data.success) {
-                    var imgSrc = res.data.data.wordCloudUrl;
-                    var topWords = res.data.data.topWords;
-                    var dateResult = res.data.data.dateResult;
-                    var ipResult = res.data.data.ipResult;
-                    var usersResult = res.data.data.usersResult;
-                    if (aids.length==1){
-                        var aid=aids[0]
-                        createAnalyzer(imgSrc,topWords)
-                        buildTree(dateResult,aid)
-                        renderIpmsg(aid,ipResult.noChinas,ipResult.ipModels)
-                    }else {
-                        const top20 = document.getElementById("top20-one-minute");
-                        top20.style.display= "none"
-                        createWordCloud(imgSrc,topWords)
-                        renderIpmsg(0,ipResult.noChinas,ipResult.ipModels)
-                        buildUserTree(usersResult.map)
-                        var totals = res.data.data.totals;
-                        renderTotals(totals)
-                    }
-
-                    // createImage(imgSrc);
-                    // createTopWords(topWords)
+            if (res.data.success) {
+                var imgSrc = res.data.data.wordCloudUrl;
+                var topWords = res.data.data.topWords;
+                var dateResult = res.data.data.dateResult;
+                var ipResult = res.data.data.ipResult;
+                var usersResult = res.data.data.usersResult;
+                if (aids.length==1){
+                    var aid=aids[0]
+                    createAnalyzer(imgSrc,topWords)
+                    buildTree(dateResult,aid)
+                    renderIpmsg(aid,ipResult.noChinas,ipResult.ipModels)
+                }else {
+                    const top20 = document.getElementById("top20-one-minute");
+                    top20.style.display= "none"
+                    createWordCloud(imgSrc,topWords)
+                    renderIpmsg(0,ipResult.noChinas,ipResult.ipModels)
+                    buildUserTree(usersResult.map)
+                    var totals = res.data.data.totals;
+                    renderTotals(totals)
                 }
-            })
+
+                // createImage(imgSrc);
+                // createTopWords(topWords)
+            }
+        })
             .catch((error) => {
                 if (error == "Error: Request failed with status code 403") {
                     alert("无操作权限");

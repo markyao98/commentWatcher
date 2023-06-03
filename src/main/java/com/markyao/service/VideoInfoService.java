@@ -6,4 +6,8 @@ import com.markyao.model.pojo.VideoInfo;
 
 public interface VideoInfoService extends IService<VideoInfo> {
     RestData getVideos();
+    RestData getVideos(int type);
+
+
+    VideoInfo getVideo(String aid);
 }

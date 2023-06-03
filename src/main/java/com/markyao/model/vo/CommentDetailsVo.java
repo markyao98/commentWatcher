@@ -7,7 +7,7 @@ import lombok.experimental.Accessors;
 @Data
 @Accessors(chain = true)
 public class CommentDetailsVo {
-    private Long id;
+    private String id;
     private String awemeId;
     private String cid;
     private String ipLabel;
@@ -17,5 +17,6 @@ public class CommentDetailsVo {
     private String text;
     private Boolean isAuthorDigged;//作者赞过
     private String videoTitle;
-
+    private Integer cur;
+    private Integer count;
 }

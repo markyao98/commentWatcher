@@ -6,6 +6,7 @@
 
     <link rel="stylesheet" type="text/css" href="./css/sidebar.css">
     <link rel="stylesheet" type="text/css" href="./css/commentlist.css">
+    <link rel="stylesheet" type="text/css" href="./css/manage.css">
     <script src="./js/sidebar.js"></script>
 
     <!-- 引入 jQuery 库 -->
@@ -13,7 +14,7 @@
     <!-- 引入 Bootstrap 的 JS 文件 -->
     <script src="https://cdn.staticfile.org/twitter-bootstrap/4.5.3/js/bootstrap.min.js"></script>
     <!-- 引入 Bootstrap 的 CSS 文件 -->
-<!--    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.5.3/css/bootstrap.min.css">-->
+    <!--    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.5.3/css/bootstrap.min.css">-->
 
     <link rel="stylesheet" href="css/custom-styles.css">
 
@@ -69,6 +70,23 @@
     .info {
         margin-bottom: 5px;
     }
+
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+    .loading-message {
+        color: #fff;
+        font-size: 24px;
+    }
 </style>
 <body>
 
@@ -85,14 +103,29 @@
             <li><a href="./commentList.html">评论列表</a></li>
             <li><a href="./harvest.html">数据采集器</a></li>
             <li><a href="./anayazer.html">数据分析器</a></li>
+            <li><a href="./manage.html">管理页</a></li>
+
         </ul>
     </div>
 
 
     <div id="page-container">
-        <select style="width: 200px" class="custom-select" id="aweme-select" onchange="getSelectedAwemeId()">
-            <option value="">请选择</option>
+        <select id="groupSelect" class="custom-select">
+            <option value="-1">请选择分组</option>
         </select>
+        <button onclick="selectGroup()">确认分组</button>
+        <select style="width: 400px" class="custom-select" id="aweme-select" onchange="getSelectedAwemeId()">
+            <option value="">请选择视频</option>
+        </select>
+
+        <div id="right-card" style="display: none" class="page-right">
+            <ul id="group-info">
+                <li id="group-img"></li>
+                <li id="group-title">分组标题</li>
+                <li id="group-desc">分组描述信息..</li>
+            </ul>
+        </div>
+
 
         <div class="card">
             <div id="aid" style="display: none"></div>
@@ -103,6 +136,9 @@
         </div>
 
         <h3>总共<strong id="totalData"></strong>条数据</h3>
+        <button onclick="updateStatus()">更新视频点赞量状态</button>
+        <button onclick="refresh()">刷新</button><br><br>
+       <br><br>
         <select style="width: 200px" class="custom-select" id="search-type-select">
             <option value="0">搜索类型</option>
             <option value="1">内容搜索</option>
@@ -112,12 +148,16 @@
         </select>
         <input id="searchMsg">
         <button onclick="search()">点击搜索</button>
+
+        <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+            <span class="loading-message">正在更新视频状态...</span>
+        </div>
         <div id="table-container">
             <div id="sort-vlaue" style="display: none"></div>
             <table  id="comment-table" class="display">
                 <colgroup>
                     <col style="width: 5%;">
-                    <col style="width: 25%;">
+                    <col style="width: 22%;">
                     <col style="width: 5%;">
                     <col style="width: 5%;">
                     <col style="width: 5%;">
@@ -125,9 +165,10 @@
                     <col style="width: 5%;">
                     <col style="width: 8%;">
                     <col style="width: 15%;">
-                    <col style="width: 7%;">
-                    <col style="width: 7%;">
-                    <col style="width: 7%;">
+                    <col style="width: 8%;">
+                    <col style="width: 5%;">
+                    <col style="width: 5%;">
+                    <col style="width: 8%;">
                 </colgroup>
                 <thead>
                 <tr>
@@ -141,42 +182,13 @@
                     <th id="userAge">年龄</th>
                     <th onclick="ipSort()" id="ipLabel">ip归属地</th>
                     <th onclick="timeSort()" id="createTime">评论时间</th>
-                    <th id="diggCount">点赞数</th>
-                    <th id="replyCommentTotal">回复数</th>
+                    <th onclick="diggSort()" id="diggCount">点赞</th>
+                    <th onclick="replySort()" id="replyCommentTotal">回复</th>
                     <th id="isAuthorDigged">作者赞过</th>
+                    <th id="isMonitored">观察结果</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr>
-                    <td style="display:none;">hidden value</td>
-                    <td class="comment-text-area">韩剧尺度是大，揭露阴暗面也毫不留情，但是好像没啥用[捂脸][捂脸][捂脸]你拍你的，人家该玩玩该浪浪[捂脸][捂脸][捂脸t</td>
-                    <td><a href="#">https://www.douyin.com/user/MS4wLjABAAAAudEMv6B8ZQGl2lk09cHUYc9eUeUtQo7Ilh-blOxUatQ</a></td>
-                    <td><img src="https://p3-pc.douyinpic.com/img/aweme-avatar/mosaic-legacy_313cd00004a6ab28876dd~c5_168x168.jpeg?from=2956013662" alt="User avatar"></td>
-                    <td>New York</td>
-                    <td>English</td>
-                    <td>John Doe</td>
-                    <td>25</td>
-                    <td>IP location</td>
-                    <td>2023-05-10 12:34:56</td>
-                    <td>10</td>
-                    <td>5</td>
-                    <td>Yes</td>
-                </tr>
-                <tr>
-                    <td style="display:none;">hidden value</td>
-                    <td class="comment-text-area">Another comment This is a comment This is a comment This is a comment This is a comment This is a comment</td>
-                    <td><a href="#">User's page</a></td>
-                    <td><img src="userAvatar.jpg" alt="User avatar"></td>
-                    <td>London</td>
-                    <td>English</td>
-                    <td>Jane Smith</td>
-                    <td>30</td>
-                    <td>IP location</td>
-                    <td>2023-05-09 08:12:34</td>
-                    <td>5</td>
-                    <td>2</td>
-                    <td>No</td>
-                </tr>
                 </tbody>
 
 
@@ -205,9 +217,121 @@
     var pageSize=10;
     var total=0;
     var totalPages=0;
-    window.onload=function (){
 
-        getGroups()
+    function getVideoGroups(){
+        axios.get("/index/groups").then((res)=>{
+            if (res.data.success){
+                var groupList=res.data.data
+                renderGroupList(groupList)
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+    }
+    function selectGroup(){
+        var selectElement = document.getElementById("groupSelect");
+        var id=selectElement.value
+        byGroup(id)
+        renderRightCard(id)
+    }
+    function updateStatus(){
+        var loadingOverlay = document.getElementById("loadingOverlay");
+        loadingOverlay.style.display = "flex"; // 显示遮罩层
+
+        var selectElement = document.getElementById("aweme-select");
+        var aid = selectElement.value;
+        axios.get("/comments/updateStatus/"+aid).then((res)=>{
+            if (res.data.success){
+                alert(res.data.msg)
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        }).finally(() => {
+            loadingOverlay.style.display = "none"; // 隐藏遮罩层
+        });;
+    }
+    function refresh(){
+        var selectElement = document.getElementById("aweme-select");
+        var aid = selectElement.value;
+        gotoPage(1,aid);
+    }
+    function byGroup(data){
+        axios.get("group/byG/"+data).then((res)=>{
+            if (res.data.success){
+                var videoList=res.data.data
+                renderOptionsContainVideoList(videoList)
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+    }
+    function renderRightCard(id){
+        axios.get("groupinfo/"+id).then((res)=>{
+            var imgLi = document.getElementById("group-img");
+            removeChilds(imgLi)
+            if (res.data.success){
+                var groupinfo=res.data.data
+
+                var title=groupinfo.title;
+                var desc=groupinfo.descMsg;
+                var rc = document.getElementById("right-card");
+
+                var imgE = document.createElement("img");
+                imgE.src="./groupsImg/" +groupinfo.img;
+                imgE.classList.add("group-img");
+                imgLi.appendChild(imgE)
+                var gt = document.getElementById("group-title");
+                gt.innerText=title
+                var gd = document.getElementById("group-desc");
+                gd.innerText=desc
+                rc.style.display = rc.style.display== 'none' ? 'block' : 'none';
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+
+
+    }
+    function removeChildsNoFirst(ele){
+        const childNodes = ele.childNodes;
+
+        // 循环遍历所有子节点并删除
+        for (let i = childNodes.length - 1; i > 0; i--) {
+            ele.removeChild(childNodes[i]);
+        }
+    }
+    function removeChilds(ele){
+        const childNodes = ele.childNodes;
+
+        // 循环遍历所有子节点并删除
+        for (let i = childNodes.length - 1; i >= 0; i--) {
+            ele.removeChild(childNodes[i]);
+        }
+    }
+    function renderOptionsContainVideoList(vList){
+        renderOptions(vList)
+    }
+    function renderGroupList(data) {
+        var selectElement = document.getElementById("groupSelect");
+        removeChilds(selectElement)
+        for (var i = 0; i < data.length; i++) {
+            var option = document.createElement("option");
+            option.value = data[i].id;
+            option.text = data[i].title;
+            selectElement.appendChild(option);
+        }
+    }
+
+    window.onload=function (){
+        getVideoGroups()
         readyPagination()
         // 在目标页面获取参数值
         var urlParams = new URLSearchParams(window.location.search);
@@ -234,9 +358,6 @@
             // var selectedAwemeId = selectElement.value;
         }
 
-
-
-
     }
 
     function ipSort(){
@@ -257,31 +378,53 @@
 
         gotoPage(1,selectedAwemeId)
     }
+    function diggSort(){
+        var selectElement = document.getElementById("aweme-select");
+        var selectedAwemeId = selectElement.value;
+        var sortDiv = document.getElementById("sort-vlaue");
+        sortDiv.value=3
+        gotoPage(1,selectedAwemeId)
+    }
+    function replySort(){
+
+        var selectElement = document.getElementById("aweme-select");
+        var selectedAwemeId = selectElement.value;
+        var sortDiv = document.getElementById("sort-vlaue");
+        sortDiv.value=4
+        gotoPage(1,selectedAwemeId)
+    }
 
     function search(){
         var selectElement = document.getElementById("aweme-select");
         var selectedAwemeId = selectElement.value;
         gotoPage(1,selectedAwemeId)
     }
-    function getGroups(){
+    /*
+        function getGroups(){
 
-        axios.get("/index").then((res)=>{
-            if (res.data.success){
-                var videoVos=res.data.data
-                renderOptions(videoVos)
-                console.log(videoVos)
+            axios.get("/index").then((res)=>{
+                if (res.data.success){
+                    var videoVos=res.data.data
+                    renderOptions(videoVos)
+                    console.log(videoVos)
 
-            }
-        }).catch((error)=>{
-            if (error == "Error: Request failed with status code 403"){
-                alert("无操作权限")
-            }
-        });
-    }
+                }
+            }).catch((error)=>{
+                if (error == "Error: Request failed with status code 403"){
+                    alert("无操作权限")
+                }
+            });
+        }
+    */
 
 
     function renderOptions(data) {
         var selectElement = document.getElementById("aweme-select");
+        removeChilds(selectElement)
+        var option0 = document.createElement("option");
+        option0.value = -1;
+        option0.text = "请选择视频";
+        selectElement.appendChild(option0);
         for (var i = 0; i < data.length; i++) {
             var option = document.createElement("option");
             option.value = data[i].awemeId;
@@ -421,11 +564,24 @@
             const diggCountCell = document.createElement('td');
             const replyCommentTotalCell = document.createElement('td');
             const isAuthorDiggedCell = document.createElement('td');
+            const isMonitoredCell = document.createElement('td');
 
             // 将数据填充到单元格中
             idCell.textContent = comment.id;
 
             textCell.textContent = comment.commentDetails.text;
+            var ismonitor=comment.isMonitored
+
+            if(ismonitor==true){
+                const a = document.createElement('a');
+                var did=comment.commentDetails.id;
+                a.href = "/echartShow.html?did="+did+"&text="+encodeURIComponent(comment.commentDetails.text);
+                a.textContent = "看";
+                a.target="_blank";
+                isMonitoredCell.appendChild(a);
+            }else {
+                isMonitoredCell.textContent="未监控"
+            }
 
             const a = document.createElement('a');
             a.href = comment.userCardLink;
@@ -473,6 +629,7 @@
             row.appendChild(diggCountCell);
             row.appendChild(replyCommentTotalCell);
             row.appendChild(isAuthorDiggedCell);
+            row.appendChild(isMonitoredCell);
 
             // 将行添加到表格主体中
             tbody.appendChild(row);

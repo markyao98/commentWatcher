@@ -1,26 +1,36 @@
 package com.markyao.service.harvest.impl;
 
+import java.io.IOException;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.common.collect.ImmutableMap;
+import com.markyao.async.ThreadService;
 import com.markyao.mapper.HarvestCommentUrlMapper;
 import com.markyao.mapper.VideoInfoMapper;
 import com.markyao.model.pojo.HarvestCommentUrl;
 import com.markyao.model.pojo.VideoInfo;
+import com.markyao.service.harvest.CommentService;
 import com.markyao.service.harvest.RequestURLService;
+import com.markyao.service.harvest.core.HarvestCommentWorker;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.tomcat.util.json.ParseException;
 import org.openqa.selenium.*;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.devtools.Command;
 import org.openqa.selenium.devtools.DevTools;
-import org.openqa.selenium.devtools.v112.network.Network;
+
+import org.openqa.selenium.devtools.v85.network.Network;
 import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.edge.EdgeOptions;
 import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.remote.http.ClientConfig;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +48,8 @@ public class RequestURLServiceImpl extends ServiceImpl<HarvestCommentUrlMapper, 
 
     @PostConstruct
     void init(){
-        System.setProperty("webdriver.edge.driver", "E:\\develop\\webdriver\\msedgedriver.exe");
+//        System.setProperty("webdriver.edge.driver", "E:\\develop\\webdriver\\msedgedriver.exe");
+        System.setProperty("webdriver.edge.driver", "E:\\develop\\webdriver\\chromedriver.exe");
     }
 
     @Autowired
@@ -53,29 +64,54 @@ public class RequestURLServiceImpl extends ServiceImpl<HarvestCommentUrlMapper, 
     private final static int SEARCH_KEY_TYPE=2;
     private final static String DOUYIN_INDEX_PAGE="https://www.douyin.com/";
     private final static String TITLE_INFO="无标题数据";
+    @Autowired
+    ThreadService threadService;
+
     /**
      * @Description 输入搜索类型,1为指定的url,2为搜索关键词
      *              获取评论的url，提供后续获取评论。并且获取视频的标题信息
-     * @Author yaoruiwei
+     * @Author markyao
      * @Date  2023/5/14
      */
     @Override
-    public void start0(String searchVal, int searchType){
+    public void start0(String searchVal, int searchType,int isAllHarvest){
         switch (searchType){
             case SEARCH_URL_TYPE:{
                 log.info("指定URL爬取~");
-                startHarvest(searchVal);
+                threadService.startHarvest(this,searchVal);
+                if (isAllHarvest==1){
+                    new Thread(()->{
+                        System.out.println("开始！！！===================");
+                        while (true){
+                            if (ALLInState==0){
+                                log.info("暂无url数据~~");
+                                sleep(1000);
+                            }else if (ALLInState==1){
+                                log.info("有url数据啦~~");
+                                startHarvestComments();
+                                sleep(1000);
+                            }else if (ALLInState==2){
+                                log.info("url数据处理完毕~~");
+                                break;
+                            }
+                        }
+                    }).start();
+                }
                 break;
             }
             case SEARCH_KEY_TYPE:{
                 log.info("关键词爬取~");
-//                startHarvest(searchVal);
                 break;
             }
         }
     }
+
+
+
     @Autowired
     ConcurrentHashMap<String,Object> stateMap;
+    @Autowired
+    CommentService commentService;
 
     /**
      * 全自动随机开始
@@ -101,13 +137,16 @@ public class RequestURLServiceImpl extends ServiceImpl<HarvestCommentUrlMapper, 
         }
     }
 
-    private void down(EdgeDriver driver){
-        Actions actions=new Actions(driver);
-        actions.sendKeys(Keys.DOWN).perform();
-    }
+    private Map<String, Network.GetResponseBodyResponse> responseBodyMap = new ConcurrentHashMap<>();
+    private Map<String, HarvestCommentUrl> hcuMap = new ConcurrentHashMap<>();
 
-    private void startHarvest(String startUrl) {
-        EdgeDriver driver = new EdgeDriver();
+//    private AtomicInteger ALLInState=new AtomicInteger(0);
+    private int ALLInState=0;
+
+
+    public void startHarvest(String startUrl) {
+//        EdgeDriver driver = new EdgeDriver();
+        ChromeDriver driver=new ChromeDriver();
         try {
             //todo 检查url
             driver.get(StringUtils.isEmpty(startUrl)?DOUYIN_INDEX_PAGE:startUrl);
@@ -155,25 +194,59 @@ public class RequestURLServiceImpl extends ServiceImpl<HarvestCommentUrlMapper, 
             videoInfo.setWatchLink(searchLinkPrefix);
             videoInfoMapper.insertForId(videoInfo);
 
-            devTools.addListener(Network.requestWillBeSent(),event->{
-                String url = event.getRequest().getUrl();
-                if (url.startsWith("https://www.douyin.com/aweme/v1/web/comment/list")){
+//            devTools.addListener(Network.requestWillBeSent(),event->{
+//                String url = event.getRequest().getUrl();
+//                if (url.startsWith("https://www.douyin.com/aweme/v1/web/comment/list")){
+//                    if (null!=videoInfo.getId()&&StringUtils.isEmpty(videoInfo.getAwemeId())){
+//                        updateVideoInfo(videoInfo, url);
+//                    }
+//                    //标志位 置为1
+//                    ALLInState=1;
+//                    HarvestCommentUrl hcu = saveUrlSingle(url);
+//                    // 在请求发起时初始化响应对象，以便后续使用
+//                    log.info("在请求发起时初始化响应对象，以便后续使用");
+//                    Command<Network.GetResponseBodyResponse> responseBodyCmd = Network.getResponseBody(event.getRequestId());
+//                    try {
+//                        Network.GetResponseBodyResponse send = devTools.send(responseBodyCmd);
+//                        responseBodyMap.put(event.getRequestId().toString(), send);
+//                        hcuMap.put(event.getRequestId().toString(), hcu);
+//                    } catch (Exception e) {
+//                        log.info("未获取到数据!!!");
+//                        e.printStackTrace();
+//                    }
+//                }
+//            });
+
+
+            devTools.addListener(Network.responseReceived(), event -> {
+                String url = event.getResponse().getUrl();
+                if (url.startsWith("https://www.douyin.com/aweme/v1/web/comment/list")) {
                     if (null!=videoInfo.getId()&&StringUtils.isEmpty(videoInfo.getAwemeId())){
                         updateVideoInfo(videoInfo, url);
                     }
-                    saveUrlSingle(url);
-
+                    //标志位 置为1
+                    ALLInState=1;
+                    HarvestCommentUrl hcu = saveUrlSingle(url);
+                    // 在请求发起时初始化响应对象，以便后续使用
+                    log.info("在请求发起时初始化响应对象，以便后续使用");
+                    Command<Network.GetResponseBodyResponse> responseBodyCmd = Network.getResponseBody(event.getRequestId());
+                    try {
+                        Network.GetResponseBodyResponse send = devTools.send(responseBodyCmd);
+                        responseBodyMap.put(event.getRequestId().toString(), send);
+                        hcuMap.put(event.getRequestId().toString(), hcu);
+                    } catch (Exception e) {
+                        log.info("未获取到数据!!!");
+                        e.printStackTrace();
+                    }
                 }
             });
+
             //1.打开评论列表
             sleep(1500);
             WebElement commentOpenBtn = driver.findElement(By.className("tzVl3l7w"));
-//            commentOpenBtn = driver.findElement(By.cssSelector("#sliderVideo > div.JrMwkvQy.playerContainer.YFEqUSvt.dLCldFlr > div.zK9etl_2.slider-video > div > div.L1TH4HdO.d6KxRih3.positionBox > div > div:nth-child(3) > div > div.tzVl3l7w > div > svg"));
-//            commentOpenBtn = driver.findElement(By.cssSelector("#sliderVideo > div.JrMwkvQy.playerContainer.YFEqUSvt.dLCldFlr > div.zK9etl_2.slider-video > div > div.L1TH4HdO.d6KxRih3.positionBox > div > div:nth-child(3) > div > div.tzVl3l7w > div > svg > g"));
 
             Optional.ofNullable(commentOpenBtn).ifPresent(c ->{
                 log.info("打开评论列表,开始收集评论url~~");
-//                actions.moveToElement(c).click();
                 c.click();
                 sleep(500);
                 keepReady(driver);
@@ -214,8 +287,37 @@ public class RequestURLServiceImpl extends ServiceImpl<HarvestCommentUrlMapper, 
 
             sleep(10000);
         } finally {
+            ALLInState=2;
             driver.quit();
         }
+    }
+
+    public void startHarvestComments(){
+        for (Map.Entry<String, Network.GetResponseBodyResponse> entry : responseBodyMap.entrySet()) {
+            String requestId = entry.getKey();
+            if (responseBodyMap.containsKey(requestId)){
+                Network.GetResponseBodyResponse responseBody = responseBodyMap.get(requestId);
+                HarvestCommentUrl hcu = hcuMap.get(requestId);
+                if (responseBody != null) {
+                    String body = responseBody.getBody();
+                    try {
+                        LinkedHashMap<String, Object> stringObjectLinkedHashMap =
+                                HarvestCommentWorker.getStringObjectLinkedHashMap(body);
+                        commentService.harvestComments(stringObjectLinkedHashMap,hcu);
+                    } catch (IOException |ParseException e) {
+                        e.printStackTrace();
+                        log.error("处理url请求信息失败!!!");
+                        return;
+                    }
+                }
+                cleanBuf(requestId);
+            }
+        }
+    }
+
+    private void cleanBuf(String key) {
+        responseBodyMap.remove(key);
+        hcuMap.remove(key);
     }
 
     private synchronized void updateVideoInfo(VideoInfo videoInfo, String url) {
@@ -262,13 +364,16 @@ public class RequestURLServiceImpl extends ServiceImpl<HarvestCommentUrlMapper, 
         return sb.toString();
     }
 
-    private synchronized void saveUrlSingle(String url) {
+    private synchronized HarvestCommentUrl saveUrlSingle(String url) {
         HarvestCommentUrl hcu=new HarvestCommentUrl();
         hcu.setUrl(url);
         hcu.setVideoId("");
         hcu.setAuthorId("");
         hcu.setId(0L);
-        harvestCommentUrlMapper.insert(hcu);
+        hcu.setCreateTime(new Date());
+        hcu.setUpdateTime(new Date());
+        harvestCommentUrlMapper.insertForId(hcu);
+        return hcu;
 
     }
     private void sleep(int mills) {
@@ -293,7 +398,7 @@ public class RequestURLServiceImpl extends ServiceImpl<HarvestCommentUrlMapper, 
     }
 
 
-    private static void keepReady(EdgeDriver driver) {
+    private static void keepReady(WebDriver driver) {
         List<WebElement> elements = driver.findElements(By.className("related-video-card-login-guide__footer-close"));
         if (!elements.isEmpty()){
             WebElement keepLook = elements.get(0);
@@ -310,12 +415,10 @@ public class RequestURLServiceImpl extends ServiceImpl<HarvestCommentUrlMapper, 
 
     /**
      * @Description 判断鼠标滚轮是否滑动到底部
-     * @Author yaoruiwei
+     * @Author markyao
      * @Date  2023/5/10
      */
-    private static boolean isAll(EdgeDriver driver){
-        //#merge-all-comment-container > div > div.sX7gMtFl.comment-mainContent.MR0IFMr1 > div.BbQpYS5o
-        //#merge-all-comment-container > div > div.sX7gMtFl.comment-mainContent.MR0IFMr1 > div.BbQpYS5o
+    private static boolean isAll(WebDriver driver){
         WebElement webElement=null;
         try {
             webElement = driver.findElements(By.cssSelector("#merge-all-comment-container > div > div.sX7gMtFl.comment-mainContent.MR0IFMr1 > div.BbQpYS5o")).get(0);
@@ -327,7 +430,7 @@ public class RequestURLServiceImpl extends ServiceImpl<HarvestCommentUrlMapper, 
         }
         return false;
     }
-    private void preReady(EdgeDriver driver) {
+    private void preReady(WebDriver driver) {
         //验证登录窗口
         List<WebElement> elements = driver.findElements(By.className("dy-account-close"));
         WebElement divClose=null;

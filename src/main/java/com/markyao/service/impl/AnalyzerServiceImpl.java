@@ -13,6 +13,7 @@ import com.markyao.utils.FileUtils;
 import com.markyao.utils.SnowflakeIdGenerator;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
@@ -32,6 +33,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.markyao.utils.FileUtils.staticPath;
+
 @Service
 public class AnalyzerServiceImpl implements AnalyzerService {
     @Autowired
@@ -44,7 +47,10 @@ public class AnalyzerServiceImpl implements AnalyzerService {
     SnowflakeIdGenerator idGenerator;
     @Autowired
     CommentService commentService;
-    private final static String staticPath=FileUtils.class.getClassLoader().getResource("static").getPath()+"/"+"imgs/";
+    @Autowired
+    BufWordCloudMapper bufWordCloudMapper;
+
+
     private final static String imgPathPrefix="./imgs/";
     @Override
     public String getTextByAid(String aid) {
@@ -115,10 +121,15 @@ public class AnalyzerServiceImpl implements AnalyzerService {
             return singleAnalyzer(aids[0]);
         }
         return multipleAnalyzer(aids);
-
     }
-    @Autowired
-    BufWordCloudMapper bufWordCloudMapper;
+
+
+
+    /**
+     * @Description 分析多个视频底下出现同个用户的情况
+     * @Author markyao
+     * @Date  2023/5/24
+     */
     private Map<String, Object> multipleAnalyzer(String[] aids) {
         List<VideoInfo> videoInfos = videoInfoMapper.selectList(new QueryWrapper<VideoInfo>().in("aweme_id", aids));
 
@@ -210,6 +221,7 @@ public class AnalyzerServiceImpl implements AnalyzerService {
     @Autowired
     CommentUserMapper commentUserMapper;
 
+
     /**
      * @Description 分析多个视频底下出现同个用户的情况
      * @Author markyao
@@ -241,7 +253,7 @@ public class AnalyzerServiceImpl implements AnalyzerService {
         }
         List<CommentUserVo>result0 =new ArrayList<>();
         Map<String,List<CommentUserVo>>result1=new HashMap<>();
-        //key为secUid,值为uidList
+
         for (Map.Entry<String, Set<String>> entry : mp.entrySet()) {
             Set<String> list = entry.getValue();
             if (list.size()>1) {
@@ -273,7 +285,6 @@ public class AnalyzerServiceImpl implements AnalyzerService {
             }
         }
         Map<String,Object>result=new HashMap<>();
-//        result.put("list",result0);
         result.put("map",result1);
         return result;
     }

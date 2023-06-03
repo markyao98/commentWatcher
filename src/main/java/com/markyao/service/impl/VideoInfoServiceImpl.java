@@ -8,6 +8,7 @@ import com.markyao.model.pojo.VideoInfo;
 import com.markyao.model.vo.VideoInfoVo;
 import com.markyao.service.VideoInfoService;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -27,5 +28,30 @@ public class VideoInfoServiceImpl extends ServiceImpl<VideoInfoMapper, VideoInfo
             videoInfoVos.add(vo);
         }
         return RestData.success(videoInfoVos);
+    }
+
+    @Override
+    public RestData getVideos(int type) {
+        if (type==1){
+            //获取可监控视频的aids
+            List<VideoInfo> videoInfos = this.baseMapper.selectList(new QueryWrapper<VideoInfo>().eq("can_monitor",true));
+            List<VideoInfoVo>videoInfoVos=new ArrayList<>(videoInfos.size());
+            for (VideoInfo videoInfo : videoInfos) {
+                VideoInfoVo vo=new VideoInfoVo();
+                BeanUtils.copyProperties(videoInfo,vo);
+                videoInfoVos.add(vo);
+            }
+            return RestData.success(videoInfoVos);
+        }
+        return getVideos();
+    }
+    @Value("${douyin.video.searchLinkPrefix}")
+    String searchLinkPrefix;
+
+    @Override
+    public VideoInfo getVideo(String aid) {
+        VideoInfo videoInfo=new VideoInfo();
+        videoInfo.setAwemeId(aid).setTitleInfo("暂未获取").setWatchLink(searchLinkPrefix+aid);
+        return videoInfo;
     }
 }

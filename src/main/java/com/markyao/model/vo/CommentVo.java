@@ -11,4 +11,6 @@ public class CommentVo {
     private CommentUser commentUser;
     private CommentDetailsVo commentDetails;
     private String userCardLink;
+    private Boolean isMonitored; //是否被监控过
+
 }

@@ -8,7 +8,7 @@ public interface RequestURLService extends IService<HarvestCommentUrl> {
 
     void start0();
 
-    void start0(String searchVal, int searchType);
+    void start0(String searchVal, int searchType,int isAllHarvest);
 
     void start();
 

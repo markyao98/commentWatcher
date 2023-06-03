@@ -118,7 +118,7 @@ public class ServiceTest {
 //        String url="https://www.douyin.com/discover?modal_id=7228628807190646071";
         String url="https://www.douyin.com/discover?modal_id=7233470811242319108";
 //7219559025464184125
-        saveRequestURL.start0(url,1);
+//        saveRequestURL.start0(url,1);
     }
 
     /**

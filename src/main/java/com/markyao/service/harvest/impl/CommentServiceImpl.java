@@ -11,10 +11,14 @@ import com.markyao.model.vo.CommentDetailsVo;
 import com.markyao.model.vo.CommentVo;
 import com.markyao.model.vo.PageVo;
 import com.markyao.model.vo.VideoInfoVo;
+import com.markyao.service.MonitorDigCountService;
+import com.markyao.service.VideoInfoService;
 import com.markyao.service.harvest.CommentService;
+import com.markyao.service.harvest.core.HarvestCommentWorker;
 import com.markyao.service.impl.AnalyzerServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.json.JSONParser;
 import org.apache.tomcat.util.json.ParseException;
 import org.springframework.aop.framework.AopContext;
@@ -32,6 +36,9 @@ import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+
+import static com.markyao.utils.FillUtils.fillCommentDetails;
+import static com.markyao.utils.FillUtils.fillCommentUser;
 
 @Service
 @Slf4j
@@ -86,78 +93,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper,Comment> imple
 
     @Autowired
     VideoInfoMapper videoInfoMapper;
-    /**
-     * 分页查询，并且还要加上视频信息
-     * @param awemeId
-     * @param current
-     * @param pageSize
-     * @return
-     */
-//    @Override
-//    public RestData pages(String awemeId, int current, int pageSize, int searchType, Object searchMsg,String sortType) {
-//        VideoInfo videoInfo = videoInfoMapper.selectOne(new QueryWrapper<VideoInfo>().eq("aweme_id", awemeId));
-//        VideoInfoVo videoInfoVo=new VideoInfoVo();
-//        BeanUtils.copyProperties(videoInfo,videoInfoVo);
-//
-//        Page<Comment>selectPage=new Page<>(current,pageSize);
-//        List<CommentVo> collect=null;
-//        if (sortType.equals(ORDER_IP)){
-//            //根据ip排序
-//            if (searchType==S_QUERY_SEARCH ){
-//                List<Long> ids = commentDetailsMapper.searchByWordSort(awemeId, searchMsg.toString(),"ip_label",current,pageSize);
-//                commentMapper.selectPage(selectPage,new QueryWrapper<Comment>().eq("aid",awemeId).in("did",ids));
-//            }else if (searchType==S_ID_SEARCH){
-//                commentMapper.selectPage(selectPage,new QueryWrapper<Comment>().eq("aid",awemeId));
-//            }else if (searchType==S_IP_SEARCH ){
-//                List<Long> ids = commentDetailsMapper.searchByIpLabelSort(awemeId, searchMsg.toString(),"ip_label",current,pageSize);
-//                commentMapper.selectPage(selectPage,new QueryWrapper<Comment>().eq("aid",awemeId).in("did",ids));
-//            }
-//            else {
-//                List<Long> ids = commentDetailsMapper.selectList(new QueryWrapper<CommentDetails>().eq("aweme_id",awemeId).orderByAsc("ip_label").select("id"))
-//                        .stream().map(d -> d.getId()).collect(Collectors.toList());
-//                commentMapper.selectPage(selectPage,new QueryWrapper<Comment>().eq("aid",awemeId).in("did",ids));
-//            }
-//        }
-//        else {
-//            if (searchType==S_QUERY_SEARCH ){
-//                List<Long> ids = commentDetailsMapper.searchByWord(awemeId, searchMsg.toString());
-//                commentMapper.selectPage(selectPage,new QueryWrapper<Comment>().eq("aid",awemeId).in("did",ids));
-//            }else if (searchType==S_ID_SEARCH){
-//                commentMapper.selectPage(selectPage,new QueryWrapper<Comment>().eq("aid",awemeId));
-//            }else if (searchType==S_IP_SEARCH ){
-//                List<Long> ids = commentDetailsMapper.searchByIpLabel(awemeId, searchMsg.toString());
-//                commentMapper.selectPage(selectPage,new QueryWrapper<Comment>().eq("aid",awemeId).in("did",ids));
-//            }
-//            else {
-//                commentMapper.selectPage(selectPage,new QueryWrapper<Comment>().eq("aid",awemeId));
-//            }
-//        }
-//
-//
-//
-//        List<Comment> records = selectPage.getRecords();
-//        collect = records.stream().map(c -> {
-//            Long uid = c.getUid();
-//            Long did = c.getDid();
-//            CommentDetails commentDetails = commentDetailsMapper.selectById(did);
-//            CommentDetailsVo commentDetailsVo=new CommentDetailsVo();
-//            BeanUtils.copyProperties(commentDetails,commentDetailsVo);
-//            commentDetailsVo.setCreateTime(getFormatDate(commentDetails.getCreateTime()));
-//            CommentUser commentUser = commentUserMapper.selectById(uid);
-//            CommentVo commentVo = new CommentVo();
-//            commentVo.setId(c.getId());
-//            commentVo.setCommentUser(commentUser);
-//            commentVo.setCommentDetails(commentDetailsVo);
-//            commentVo.setUserCardLink(cardUrlPrefix + commentUser.getSecUid());
-//            return commentVo;
-//        }).collect(Collectors.toList());
-//        PageVo pageVo=new PageVo();
-//        pageVo.setList(collect);
-//        pageVo.setTotals(selectPage.getTotal());
-//        pageVo.setTotalPages(selectPage.getPages());
-//        pageVo.setInfo(videoInfoVo);
-//        return RestData.success(pageVo);
-//    }
+    @Autowired
+    MonitorCommentDiggMapper monitorCommentDiggMapper;
 /**
      * 分页查询，并且还要加上视频信息
      * @param awemeId
@@ -173,32 +110,55 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper,Comment> imple
 
         Page<CommentDetails>selectPage=new Page<>(current,pageSize);
         List<CommentVo> collect=null;
-        if (sortType.equals(ORDER_IP) || sortType.equals(ORDER_DATE)){
+        if (sortType.equals(ORDER_IP) || sortType.equals(ORDER_DATE) || sortType.equals(ORDER_DIGGCOUNT) || sortType.equals(ORDER_REPLYOUNT)){
             String sortField = "";
+            boolean isASC=true;
             if (sortType.equals(ORDER_IP)){
                 sortField="ip_label";
             }else if (sortType.equals(ORDER_DATE)){
                 sortField="create_time";
-
+            }else if (sortType.equals(ORDER_DIGGCOUNT)){
+                sortField="digg_count";
+                isASC=false;
+            }else if (sortType.equals(ORDER_REPLYOUNT)){
+                sortField="reply_comment_total";
+                isASC=false;
             }
             //排序
+
             if (searchType==S_QUERY_SEARCH ){
                 List<Long> ids = commentDetailsMapper.searchByWordSort(awemeId, searchMsg.toString(), sortField,current,pageSize);
-                commentDetailsMapper.selectPage(selectPage,new QueryWrapper<CommentDetails>().eq("aweme_id",awemeId).in("id",ids).orderByAsc(sortField));
+                if (isASC){
+                    commentDetailsMapper.selectPage(selectPage,new QueryWrapper<CommentDetails>().eq("aweme_id",awemeId).in("id",ids).orderByAsc(sortField));
+                }else {
+                    commentDetailsMapper.selectPage(selectPage,new QueryWrapper<CommentDetails>().eq("aweme_id",awemeId).in("id",ids).orderByDesc(sortField));
+                }
             }else if (searchType==S_ID_SEARCH){
                 commentDetailsMapper.selectPage(selectPage,new QueryWrapper<CommentDetails>().eq("aweme_id",awemeId));
             }else if (searchType==S_IP_SEARCH ){
                 List<Long> ids = commentDetailsMapper.searchByIpLabel(awemeId, searchMsg.toString());
-                commentDetailsMapper.selectPage(selectPage,new QueryWrapper<CommentDetails>().eq("aweme_id",awemeId).in("id",ids).orderByAsc(sortField));
+                if (isASC){
+                    commentDetailsMapper.selectPage(selectPage,new QueryWrapper<CommentDetails>().eq("aweme_id",awemeId).in("id",ids).orderByAsc(sortField));
+                }else {
+                    commentDetailsMapper.selectPage(selectPage,new QueryWrapper<CommentDetails>().eq("aweme_id",awemeId).in("id",ids).orderByDesc(sortField));
+                }
             }else if (searchType==S_DATE_SEARCH ){
                 String startDateTimeStr = searchMsg.toString()+":00";
                 String eneDateTimeStr = searchMsg.toString()+":59";
                 List<Long> ids = commentDetailsMapper.selectList(new QueryWrapper<CommentDetails>().select("id")
                         .ge("create_time",startDateTimeStr).le("create_time",eneDateTimeStr)).stream().map(cd->cd.getId()).collect(Collectors.toList());
-                commentDetailsMapper.selectPage(selectPage,new QueryWrapper<CommentDetails>().eq("aweme_id",awemeId).in("id",ids).orderByAsc(sortField));
+                if (isASC){
+                    commentDetailsMapper.selectPage(selectPage,new QueryWrapper<CommentDetails>().eq("aweme_id",awemeId).in("id",ids).orderByAsc(sortField));
+                }else {
+                    commentDetailsMapper.selectPage(selectPage,new QueryWrapper<CommentDetails>().eq("aweme_id",awemeId).in("id",ids).orderByDesc(sortField));
+                }
             }
             else {
-                commentDetailsMapper.selectPage(selectPage,new QueryWrapper<CommentDetails>().eq("aweme_id",awemeId).orderByAsc(sortField));
+                if (isASC){
+                    commentDetailsMapper.selectPage(selectPage,new QueryWrapper<CommentDetails>().eq("aweme_id",awemeId).orderByAsc(sortField));
+                }else {
+                    commentDetailsMapper.selectPage(selectPage,new QueryWrapper<CommentDetails>().eq("aweme_id",awemeId).orderByDesc(sortField));
+                }
             }
         }
         else {
@@ -237,6 +197,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper,Comment> imple
             Comment c = commentMapper.selectOne(new QueryWrapper<Comment>().eq("did", dId));
             CommentDetailsVo commentDetailsVo=new CommentDetailsVo();
             BeanUtils.copyProperties(cd,commentDetailsVo);
+            commentDetailsVo.setId(dId+"");
             commentDetailsVo.setCreateTime(getFormatDate(cd.getCreateTime()));
             CommentUser commentUser = commentUserMapper.selectById(c.getUid());
             CommentVo commentVo = new CommentVo();
@@ -244,7 +205,16 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper,Comment> imple
             commentVo.setCommentUser(commentUser);
             commentVo.setCommentDetails(commentDetailsVo);
             commentVo.setUserCardLink(cardUrlPrefix + commentUser.getSecUid());
-
+            //检查是否可以去看监控数据
+            Integer cnt=-1;
+            try {
+                cnt = monitorCommentDiggMapper.selectCount(new QueryWrapper<MonitorCommentDigg>().eq("cdid", dId));
+            } catch (Exception e) {cnt=-1;}
+            if (cnt!=-1 && cnt>0){
+                commentVo.setIsMonitored(true);
+            }else {
+                commentVo.setIsMonitored(false);
+            }
             return commentVo;
         }).collect(Collectors.toList());
         PageVo pageVo=new PageVo();
@@ -330,11 +300,12 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper,Comment> imple
             }
         });
     }
-    @Value("${douyin.cookie}")
-    String cookie;
+
 
     @Autowired
     ConcurrentHashMap<String,Object>bufMap;
+    @Autowired
+    HarvestCommentWorker harvestCommentWorker;
     /**
      * 注意,cookie最好常换，而且要使用登录的账户的cookie
      * @param url
@@ -343,29 +314,16 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper,Comment> imple
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void harvestComments(String url,HarvestCommentUrl c) throws IOException, ParseException {
-        OkHttpClient client = new OkHttpClient().newBuilder()
-                .build();
-//        url=dealUrl(url);
-        String aid=getAidFromUrl(url);
-//        MediaType mediaType = MediaType.parse("text/plain");
-//        RequestBody body = RequestBody.create(mediaType, "");
-        String userAgent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.50";
-        String referer=searchLinkPrefix+aid;
-//                "https://www.douyin.com/discover?modal_id=7230753691257605409";
-        Request request = new Request.Builder()
-                .url(url)
-                .method("GET",null)
-                .addHeader("referer", referer)
-                .addHeader("authority", "www.douyin.com")
-                .addHeader("cookie",cookie)
-                .addHeader("user-agent", userAgent)
-                .build();
-        Response response = client.newCall(request).execute();
-        ResponseBody b = response.body();
-        JSONParser jsonParser=new JSONParser(b.string());
-        LinkedHashMap<String, Object> stringObjectLinkedHashMap = jsonParser.parseObject();
+    public void harvestComments(String url,HarvestCommentUrl c) {
+        LinkedHashMap<String, Object> stringObjectLinkedHashMap = null;
+        try {
+            stringObjectLinkedHashMap = harvestCommentWorker.getCommentsResponse(url);
+        } catch (IOException |ParseException e) {
+            e.printStackTrace();
+            return;
+        }
         int cnt=0;
+        String aid="";
         for (Map.Entry<String, Object> e : stringObjectLinkedHashMap.entrySet()) {
             if (e.getKey().equals("comments")){
                 ArrayList<Map> value = (ArrayList) e.getValue();
@@ -373,6 +331,9 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper,Comment> imple
                     break;
                 }
                 for (Map map : value) {
+                    if (StringUtils.isEmpty(aid)){
+                        aid=map.get("aweme_id").toString();
+                    }
                     CommentDetails commentDetails=fillCommentDetails(map);
                     commentDetailsMapper.insertForId(commentDetails);
                     CommentUser commentUser=fillCommentUser(map);
@@ -386,21 +347,157 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper,Comment> imple
                 }
             }
         }
-        threadService.updateUrlStatus(harvestCommentUrlMapper,c);
+        threadService.updateUrlStatus(harvestCommentUrlMapper,c,aid);
+        threadService.updateVideInfo(videoInfoMapper,aid);
         bufMap.put(CUR_HARVEST_COMMENTS_CNT,(int)bufMap.getOrDefault(CUR_HARVEST_COMMENTS_CNT,0)+cnt);
     }
 
-    private static String getAidFromUrl(String url) {
-        int idx=url.indexOf("&aweme_id=")+10;
-        StringBuilder sb=new StringBuilder();
-        for (int i = idx; i < url.length(); i++) {
-            if (url.charAt(i)=='&'){
-                break;
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void harvestComments(LinkedHashMap<String, Object> stringObjectLinkedHashMap,HarvestCommentUrl hcu) {
+        int cnt=0;
+        String aid="";
+        for (Map.Entry<String, Object> e : stringObjectLinkedHashMap.entrySet()) {
+            if (e.getKey().equals("comments")){
+                ArrayList<Map> value = (ArrayList) e.getValue();
+                if (null == value){
+                    break;
+                }
+                for (Map map : value) {
+                    if (StringUtils.isEmpty(aid)){
+                        aid=map.get("aweme_id").toString();
+                    }
+                    CommentDetails commentDetails=fillCommentDetails(map);
+                    commentDetailsMapper.insertForId(commentDetails);
+                    CommentUser commentUser=fillCommentUser(map);
+                    commentUserMapper.insertForId(commentUser);
+                    Comment comment=new Comment();
+                    comment.setAid(commentDetails.getAwemeId());
+                    comment.setUid(commentUser.getId());
+                    comment.setDid(commentDetails.getId());
+                    commentMapper.insert(comment);
+                    cnt++;
+                }
             }
-            sb.append(url.charAt(i));
         }
-        return sb.toString();
+        bufMap.put(CUR_HARVEST_COMMENTS_CNT,(int)bufMap.getOrDefault(CUR_HARVEST_COMMENTS_CNT,0)+cnt);
+        updateUrlStatus(harvestCommentUrlMapper,hcu,aid);
+        updateVideInfo(videoInfoMapper,aid);
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void harvestComments(LinkedHashMap<String, Object> stringObjectLinkedHashMap) throws IOException, ParseException {
+        int cnt=0;
+        String aid="";
+        int cur= (int) stringObjectLinkedHashMap.get("thisCur");
+        for (Map.Entry<String, Object> e : stringObjectLinkedHashMap.entrySet()) {
+            if (e.getKey().equals("comments")){
+                ArrayList<Map> value = (ArrayList) e.getValue();
+                if (null == value){
+                    break;
+                }
+                for (Map map : value) {
+                    if (StringUtils.isEmpty(aid)){
+                        aid=map.get("aweme_id").toString();
+                    }
+                    CommentDetails commentDetails=fillCommentDetails(map);
+                    commentDetails.setCur(cur).setCount(50);
+                    CommentUser commentUser=fillCommentUser(map);
+                    Comment comment=new Comment();
+                    comment.setAid(commentDetails.getAwemeId());
+                    comment.setUid(commentUser.getId());
+                    comment.setDid(commentDetails.getId());
+                    commentDetailsMapper.insertForId(commentDetails);
+                    commentUserMapper.insertForId(commentUser);
+                    commentMapper.insert(comment);
+                    cnt++;
+                }
+            }
+        }
+        bufMap.put(CUR_HARVEST_COMMENTS_CNT,(int)bufMap.getOrDefault(CUR_HARVEST_COMMENTS_CNT,0)+cnt);
+        updateVideInfo(videoInfoMapper,aid);
+    }
+    @Autowired
+    VideoInfoService videoInfoService;
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void saveCommentTransaction(CommentDetails commentDetails,CommentUser commentUser,Comment comment){
+        commentDetailsMapper.insertForId(commentDetails);
+        commentUserMapper.insertForId(commentUser);
+        commentMapper.insert(comment);
+    }
+
+    /**
+     * 通过deatails表的cid 去重
+     * @param cid
+     */
+    @Override
+    public void duplicateDealByCid(String cid) {
+        //保留最老的数据
+        List<CommentDetails> commentDetails = commentDetailsMapper.selectList(new QueryWrapper<CommentDetails>().eq("cid", cid).orderByAsc("create_time"));
+        if (commentDetails.size()<=1){
+            return;
+        }
+        List<Long>ids=new ArrayList<>(commentDetails.size());
+        List<Long>dids=new ArrayList<>(commentDetails.size());
+        List<Long>uids=new ArrayList<>(commentDetails.size());
+        //保留第一个
+        for (int i=1;i<commentDetails.size();i++){
+            CommentDetails detail = commentDetails.get(i);
+            Comment comment = commentMapper.selectOne(new QueryWrapper<Comment>().eq("did", detail.getId()));
+            dids.add(detail.getId());
+            if(comment==null){
+                continue;
+            }
+            ids.add(comment.getId());
+            try {
+                uids.add(comment.getUid());
+            } catch (Exception e) {}
+        }
+        CommentService o = (CommentService) AopContext.currentProxy();
+        o.batchDeleteThreeTb(ids,dids,uids);
+        log.info("去重成功~~ 干掉 {} 个重复项",commentDetails.size());
+    }
+
+    @Override
+    @Transactional
+    public void deleteThreeTb(Long id, Long did, Long uid) {
+        commentMapper.deleteById(id);
+        commentDetailsMapper.deleteById(did);
+        commentUserMapper.deleteById(uid);
+    }
+
+    @Override
+    @Transactional
+    public void batchDeleteThreeTb(List<Long> ids, List<Long> dids, List<Long> uids) {
+        commentMapper.deleteBatchIds(ids);
+        commentDetailsMapper.deleteBatchIds(dids);
+        commentUserMapper.deleteBatchIds(uids);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void updateVideInfo(VideoInfoMapper videoInfoMapper, String aid) {
+        VideoInfo videoInfo = videoInfoMapper.selectOne(new QueryWrapper<VideoInfo>().eq("aweme_id", aid));
+        if (videoInfo==null){
+            videoInfo=videoInfoService.getVideo(aid);
+            videoInfoService.save(videoInfo);
+        }
+        if (videoInfo.getCanMonitor()==null || !videoInfo.getCanMonitor()){
+            videoInfo.setCanMonitor(true);
+            videoInfoMapper.updateById(videoInfo);
+            log.info("更新视频信息~~");
+        }
+    }
+
+    private void updateUrlStatus(HarvestCommentUrlMapper harvestCommentUrlMapper, HarvestCommentUrl hcu, String aid) {
+        hcu.setIsDeal(true);
+        hcu.setVideoId(aid);
+        harvestCommentUrlMapper.updateById(hcu);
+        log.info("更新url收集状态..");
+    }
+
 
     private String dealUrl(String url) {
         String s = url.replaceFirst("&count=20", "");
@@ -412,55 +509,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper,Comment> imple
         String regex = "\\\\x[0-9a-fA-F]{2}";
         return str.replaceAll(regex, "emoji");
     }
-    private CommentUser fillCommentUser(Map map) {
-        try {
-            Map<String,Object> user = (Map) map.get("user");
-            String uid = user.get("uid").toString();
-            String sec_uid = user.get("sec_uid").toString();
 
-            Map<String,Object> avatar_168x168 = (Map) user.get("avatar_168x168");
-            List url_list = (List) avatar_168x168.get("url_list");
-            String avatar = url_list.get(0).toString();
-
-            String region = user.get("region").toString();
-
-            String language = user.get("language").toString();
-            String nickname = user.get("nickname").toString();
-//            nickname=unicoderString(nickname);
-//            log.debug("处理后的nickname {}",nickname);
-
-            String user_age = user.get("user_age").toString();
-
-            CommentUser commentUser=new CommentUser();
-            commentUser.setAvatar(avatar).setUserAge(Integer.valueOf(user_age)).setLanguage(language).setNickname(nickname).setSecUid(sec_uid)
-                    .setUid(uid).setRegion(region);
-            return commentUser;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return new CommentUser();
-    }
-
-    private CommentDetails fillCommentDetails(Map map) {
-        String digg_count = map.get("digg_count").toString();
-        String ip_label = map.get("ip_label").toString();
-
-        String reply_comment_total = map.get("reply_comment_total").toString();
-        String text = map.get("text").toString();
-//        text=unicoderString(text);
-
-        BigInteger create_time0 = (BigInteger) map.get("create_time");
-//        long create_times=targetTime(create_time0.longValue());
-
-        String aweme_id = map.get("aweme_id").toString();
-        String cid = map.get("cid").toString();
-        Boolean is_author_digged = (Boolean) map.get("is_author_digged");
-        CommentDetails commentDetails=new CommentDetails();
-        commentDetails.setCid(cid).setAwemeId(aweme_id).setIpLabel(ip_label)
-                .setCreateTime(new Date(create_time0.longValue()*1000L)).setDiggCount(Integer.valueOf(digg_count))
-                .setReplyCommentTotal(Integer.valueOf(reply_comment_total)).setText(text).setIsAuthorDigged(is_author_digged);
-        return commentDetails;
-    }
 
 
     public static long targetTime(long time){
@@ -487,8 +536,5 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper,Comment> imple
 
 
 
-    public static void main(String[] args) {
-        String aidFromUrl = getAidFromUrl("https://www.douyin.com/aweme/v1/web/comment/list/?device_platform=webapp&aid=6383&channel=channel_pc_web&aweme_id=7230753691257605409&cursor=20&count=20&item_type=0&insert_ids=&rcFT=&pc_client_type=1&version_code=170400&version_name=17.4.0&cookie_enabled=true&screen_width=1536&screen_height=864&browser_language=zh-CN&browser_platform=Win32&browser_name=Edge&browser_version=113.0.1774.50&browser_online=true&engine_name=Blink&engine_version=113.0.0.0&os_name=Windows&os_version=10&cpu_core_num=8&device_memory=8&platform=PC&downlink=0.4&effective_type=4g&round_trip_time=100&webid=7209133947333920260&msToken=epwRLsPThG8TTifBULS8i26DiAXNEJHUq7ffbTUKqO2oZaCgRfi38oLPto5XTuhnBSHcvTDO3TyOUgxTg0VT4tNL1wbhOcjIeoCddliPtTAkJzmaVOh9PA==&X-Bogus=DFSzswVLKuTANr7yttPLa5ppgiuT");
-        System.out.println(aidFromUrl);
-    }
+
 }

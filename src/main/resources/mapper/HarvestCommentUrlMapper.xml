@@ -9,5 +9,9 @@
          </foreach>
     </insert>
 
-
+    <insert id="insertForId" parameterType="HarvestCommentUrl" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO harvest_comment_url (id,url,video_id,create_time,update_time)
+        VALUES
+            (0, #{url}, #{videoId},#{createTime}, #{updateTime})
+    </insert>
 </mapper>
