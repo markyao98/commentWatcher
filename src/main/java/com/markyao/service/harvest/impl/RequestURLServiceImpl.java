@@ -70,7 +70,7 @@ public class RequestURLServiceImpl extends ServiceImpl<HarvestCommentUrlMapper, 
     /**
      * @Description 输入搜索类型,1为指定的url,2为搜索关键词
      *              获取评论的url，提供后续获取评论。并且获取视频的标题信息
-     * @Author yaoruiwei
+     * @Author markyao
      * @Date  2023/5/14
      */
     @Override
@@ -415,12 +415,10 @@ public class RequestURLServiceImpl extends ServiceImpl<HarvestCommentUrlMapper, 
 
     /**
      * @Description 判断鼠标滚轮是否滑动到底部
-     * @Author yaoruiwei
+     * @Author markyao
      * @Date  2023/5/10
      */
     private static boolean isAll(WebDriver driver){
-        //#merge-all-comment-container > div > div.sX7gMtFl.comment-mainContent.MR0IFMr1 > div.BbQpYS5o
-        //#merge-all-comment-container > div > div.sX7gMtFl.comment-mainContent.MR0IFMr1 > div.BbQpYS5o
         WebElement webElement=null;
         try {
             webElement = driver.findElements(By.cssSelector("#merge-all-comment-container > div > div.sX7gMtFl.comment-mainContent.MR0IFMr1 > div.BbQpYS5o")).get(0);

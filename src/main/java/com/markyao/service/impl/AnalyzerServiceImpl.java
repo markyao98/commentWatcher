@@ -13,6 +13,7 @@ import com.markyao.utils.FileUtils;
 import com.markyao.utils.SnowflakeIdGenerator;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
@@ -32,6 +33,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.markyao.utils.FileUtils.staticPath;
+
 @Service
 public class AnalyzerServiceImpl implements AnalyzerService {
     @Autowired
@@ -46,7 +49,8 @@ public class AnalyzerServiceImpl implements AnalyzerService {
     CommentService commentService;
     @Autowired
     BufWordCloudMapper bufWordCloudMapper;
-    private final static String staticPath=FileUtils.class.getClassLoader().getResource("static").getPath()+"/"+"imgs/";
+
+
     private final static String imgPathPrefix="./imgs/";
     @Override
     public String getTextByAid(String aid) {

@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * @Description 雪花ID生成器
- * @Author yaoruiwei
+ * @Author markyao
  * @Date  2023/5/16
  */
 @Configuration

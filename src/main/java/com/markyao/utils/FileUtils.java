@@ -3,6 +3,7 @@ package com.markyao.utils;
 import java.io.*;
 
 public class FileUtils {
+    public final static String staticPath=FileUtils.class.getClassLoader().getResource("static").getPath()+"/"+"imgs/";
 
 
     public static void main(String[] args) throws IOException {
@@ -10,7 +11,6 @@ public class FileUtils {
         File file=new File(staticPath.substring(1));
         System.out.println(file.isDirectory());
         System.out.println(staticPath);
-//        String staticPath=FileUtils.class.getClassLoader().getResource("static/imgs/xx.png").getPath();
         String sPath="E:\\study_daydayup\\project\\douyin-harvest\\analyze\\results\\wordCloud\\xx.png";
         String dPath=staticPath;
         copyImageFile(sPath,dPath);
