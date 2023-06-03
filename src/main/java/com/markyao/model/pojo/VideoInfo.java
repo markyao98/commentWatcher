@@ -15,4 +15,5 @@ public class VideoInfo {
     private String wordCloud;
     private String topWords;
     private Integer totals;
+    private Boolean canMonitor;
 }

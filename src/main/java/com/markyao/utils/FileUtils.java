@@ -71,4 +71,23 @@ public class FileUtils {
             e.printStackTrace();
         }
     }
+
+    public static String writeToDest(String destDictory,String fileName,InputStream is){
+        File dic=new File(destDictory);
+        if (!dic.exists()){
+            dic.mkdirs();
+        }
+
+        try (FileOutputStream fileOutputStream = new FileOutputStream(destDictory+fileName)){
+            byte[] bys = new byte[1024];
+            int byteRead;
+            while ((byteRead=is.read(bys))!=-1){
+                fileOutputStream.write(bys,0,byteRead);
+            }
+            return destDictory+fileName;
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+        return "";
+    }
 }

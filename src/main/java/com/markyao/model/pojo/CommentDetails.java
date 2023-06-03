@@ -19,6 +19,7 @@ public class CommentDetails {
     private Integer replyCommentTotal;
     private String text;
     private Boolean isAuthorDigged;//作者赞过
-
+    private Integer cur;
+    private Integer count;
 
 }

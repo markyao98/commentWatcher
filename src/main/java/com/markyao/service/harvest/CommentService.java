@@ -3,10 +3,14 @@ package com.markyao.service.harvest;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.markyao.model.dto.RestData;
 import com.markyao.model.pojo.Comment;
+import com.markyao.model.pojo.CommentDetails;
+import com.markyao.model.pojo.CommentUser;
 import com.markyao.model.pojo.HarvestCommentUrl;
 import org.apache.tomcat.util.json.ParseException;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 public interface CommentService extends IService<Comment> {
     public static String STOP_HARVEST_COMMENTS="STOP_HARVEST_COMMENTS";
@@ -21,6 +25,8 @@ public interface CommentService extends IService<Comment> {
     public static String ORDER_COMMON="0";  //普通不排序
     public static String ORDER_IP="1";  //ip排序
     public static String ORDER_DATE="2";  //时间排序
+    public static String ORDER_DIGGCOUNT="3";  //点赞排序
+    public static String ORDER_REPLYOUNT="4";  //点赞排序
 
 
     RestData pages(int current, int pageSize);
@@ -30,5 +36,15 @@ public interface CommentService extends IService<Comment> {
 
     void harvestComments(String url, HarvestCommentUrl c)throws IOException, ParseException;
 
+    void harvestComments(LinkedHashMap<String, Object> stringObjectLinkedHashMap,HarvestCommentUrl c)throws IOException, ParseException;
 
+
+    void harvestComments(LinkedHashMap<String, Object> stringObjectLinkedHashMap)throws IOException, ParseException;
+
+    void saveCommentTransaction(CommentDetails commentDetails, CommentUser commentUser, Comment comment);
+
+    void duplicateDealByCid(String cid);
+
+    void deleteThreeTb(Long id, Long did, Long uid);
+    void batchDeleteThreeTb(List<Long> id, List<Long> did, List<Long> uid);
 }

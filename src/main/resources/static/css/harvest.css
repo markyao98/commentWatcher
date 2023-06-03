@@ -1,0 +1,72 @@
+    /* 标题栏样式 */
+.header {
+    /*height: 50px;*/
+    text-align: center;
+    font-size: 24px;
+    line-height: 50px;
+    background-color: #555;
+    color: white;
+    padding: 20px;
+}
+
+/* 容器样式 */
+.container {
+    display: flex;
+    flex-direction: row;
+    height: calc(100vh - 50px); /* 让容器填满剩余的空间 */
+}
+
+.card {
+    /*width: 300px;*/
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+input[type="text"] {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 5px;
+}
+
+.btn-container {
+    display: flex;
+    justify-content: center;
+}
+
+.btn-container button {
+    margin: 0 5px;
+    margin-bottom: 5px;
+}
+
+
+.dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.red {
+    background-color: red;
+}
+
+.yellow {
+    background-color: yellow;
+}
+
+.green {
+    background-color: green;
+}
+    table {
+        border-collapse: collapse;
+    }
+    th, td {
+        border: 1px solid black;
+        padding: 8px;
+    }

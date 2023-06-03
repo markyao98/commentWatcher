@@ -1,6 +1,7 @@
 package com.markyao.controller;
 
 import com.markyao.model.dto.RestData;
+import com.markyao.service.CommentDetailService;
 import com.markyao.service.harvest.CommentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -13,7 +14,8 @@ public class CommentController {
 
     @Autowired
     CommentService commentService;
-
+    @Autowired
+    CommentDetailService commentDetailService;
 
     @GetMapping("list")
     public RestData listPage(@RequestParam(value = "page",defaultValue = "1") Integer currentPage,@RequestParam(value = "pageSize",defaultValue = "10") Integer pageSize){
@@ -29,5 +31,16 @@ public class CommentController {
                              @RequestParam(value = "sortType",defaultValue = "0")String sortType
                              ) throws ParseException {
         return commentService.pages(awemeId,currentPage, pageSize,searchType,searchMsg,sortType);
+    }
+    /**
+     * 更新该视频下的点赞数
+     */
+    @GetMapping("updateStatus/{awemeId}")
+    public RestData updateStatus(@PathVariable("awemeId")String awemeId){
+        long sum = commentDetailService.updateStatusForAid(awemeId);
+        if (sum==0){
+            return RestData.success(0).setMsg("当前视频下未新增监控数据");
+        }
+        return RestData.success(sum).setMsg("更新"+sum+" 条监控数据成功");
     }
 }

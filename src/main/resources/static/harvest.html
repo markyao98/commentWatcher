@@ -6,78 +6,14 @@
 
     <link rel="stylesheet" type="text/css" href="./css/sidebar.css">
     <link rel="stylesheet" type="text/css" href="./css/commentlist.css">
+    <link rel="stylesheet" type="text/css" href="./css/custom-styles.css">
+    <link rel="stylesheet" type="text/css" href="./css/harvest.css">
     <script src="./js/sidebar.js"></script>
     <script src="https://cdn.staticfile.org/jquery/3.5.1/jquery.min.js"></script>
     <script src="./js/axios-0.18.0.js"></script>
+    <script src="./js/dot.js"></script>
 
 </head>
-<style>
-    /* 标题栏样式 */
-    .header {
-        /*height: 50px;*/
-        text-align: center;
-        font-size: 24px;
-        line-height: 50px;
-        background-color: #555;
-        color: white;
-        padding: 20px;
-    }
-
-    /* 容器样式 */
-    .container {
-        display: flex;
-        flex-direction: row;
-        height: calc(100vh - 50px); /* 让容器填满剩余的空间 */
-    }
-
-    .card {
-        /*width: 300px;*/
-        padding: 20px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        margin: 20px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    input[type="text"] {
-        width: 100%;
-        margin-bottom: 10px;
-        padding: 5px;
-    }
-
-    .btn-container {
-        display: flex;
-        justify-content: center;
-    }
-
-    .btn-container button {
-        margin: 0 5px;
-        margin-bottom: 5px;
-    }
-
-
-    .dot {
-        display: inline-block;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        margin-right: 5px;
-    }
-
-    .red {
-        background-color: red;
-    }
-
-    .yellow {
-        background-color: yellow;
-    }
-
-    .green {
-        background-color: green;
-    }
-</style>
 <body>
 
 <div class="header">
@@ -91,6 +27,7 @@
             <li><a href="./commentList.html">评论列表</a></li>
             <li><a href="./harvest.html">数据采集器</a></li>
             <li><a href="./anayazer.html">数据分析器</a></li>
+            <li><a href="./manage.html">管理页</a></li>
         </ul>
     </div>
 
@@ -102,6 +39,7 @@
             <div class="btn-container">
                 <button id="startBtn-1">开始收集前端评论</button>
 <!--                <button id="pauseBtn-1">暂停</button>-->
+                <button id="startBtn-1-1">开始收集并自动开启监控</button>
                 <button id="stopBtn-1">停止收集</button>
             </div>
 
@@ -110,25 +48,102 @@
             <span class="dot green" id="greenDot"></span>
         </div>
 
-        <div class="card">
-            <h2>评论后端采集处理器</h2>
+<!--        <div class="card">-->
+<!--            <h2>评论后端采集处理器</h2>-->
 
+<!--            <div class="btn-container">-->
+<!--                <button id="startBtn-2">开始处理评论数据</button>-->
+<!--                <button id="pauseBtn-2">暂停处理</button>-->
+<!--                <button id="stopBtn-2">停止处理</button>-->
+<!--            </div>-->
+
+<!--            <div id="curCNT" style="display: none">xx</div>-->
+<!--            <span class="dot red" id="redDot2"></span>-->
+<!--            <span class="dot yellow" id="yellowDot2"></span>-->
+<!--            <span class="dot green" id="greenDot2"></span>-->
+<!--        </div>-->
+
+         <div class="card">
+            <h2>观察者</h2>
+
+             <select id="groupSelect" class="custom-select" style="width: 300px">
+                 <option value="-1">请选择分组</option>
+             </select>
+             <button onclick="selectGroup()">确认分组</button>
+             <select style="width: 400px" class="custom-select" id="aweme-select" onchange="selectVideo()">
+                 <option value="">请选择视频</option>
+             </select>
+
+<!--             <select  style="width: 1000px" class="custom-select" id="aweme-select"  multiple>-->
+<!--             </select>-->
+             <div style="display: flex;margin-bottom: 30px">
+<!--                 <input type="text" placeholder="请输入aid..."  style="margin-right: 10px;">-->
+                 <select class="custom-select" id="time-stand">
+                     <option disabled selected>请选择观察间隔..</option>
+                     <option value="10">10s</option>
+                     <option value="30">30s</option>
+                     <option value="60">60s</option>
+                 </select>
+             </div>
             <div class="btn-container">
-                <button id="startBtn-2">开始处理评论数据</button>
-                <button id="pauseBtn-2">暂停处理</button>
-                <button id="stopBtn-2">停止处理</button>
+                <button id="startBtn-3" onclick="startMonitoring()">开始观察评论数据</button>
+                <button id="stopBtn-3" onclick="stopMonitoring()">停止观察评论</button>
             </div>
 
-            <div id="curCNT" style="display: none">xx</div>
-            <span class="dot red" id="redDot2"></span>
-            <span class="dot yellow" id="yellowDot2"></span>
-            <span class="dot green" id="greenDot2"></span>
+             <h3>正在观察</h3>
+             <table id="monitorTable">
+                 <thead>
+                 <tr>
+                     <th>aid</th>
+                     <th>标题</th>
+                     <th>最大变更数</th>
+                     <th>监控开始时间</th>
+                 </tr>
+                 </thead>
+                 <tbody>
+                 </tbody>
+             </table>
+
+             <h3>正被锁定列表</h3>
+             <table id="monitorBoomTable">
+                 <thead>
+                 <tr>
+                     <th>aid</th>
+                     <th>cur</th>
+                     <th>视频标题</th>
+                     <th>评论内容</th>
+                 </tr>
+                 </thead>
+                 <tbody>
+                 </tbody>
+             </table>
+             <h3>观察历史</h3>
+             <table id="monitoredTable">
+                 <thead>
+                 <tr>
+                     <th>aid</th>
+                     <th>标题</th>
+                     <th>最大变更数</th>
+                     <th>监控开始时间</th>
+                 </tr>
+                 </thead>
+                 <tbody>
+                 </tbody>
+             </table>
         </div>
+
+
     </div>
 </div>
 
 <script>
+
     window.onload=function (){
+        getVideoGroups()
+        getMonitoringList()
+        getMonitoredList()
+        getBoomMonitoringList()
+        // getGroups()
         setInterval(function() {
             axios.get("/curDealingCounts").then((res)=>{
                 if (res.data.success){
@@ -150,37 +165,344 @@
                     alert("无操作权限")
                 }
             });
-        }, 10000);
+        }, 30000);
+// 获取按钮和输入框的元素
+        var startBtn1 = document.getElementById("startBtn-1");
+        var startBtn11 = document.getElementById("startBtn-1-1");
+// var pauseBtn1 = document.getElementById("pauseBtn-1");
+        var stopBtn1 = document.getElementById("stopBtn-1");
+        var inputField1 = document.getElementById("inputField-1");
 
+// 绑定按钮点击事件
+        startBtn1.addEventListener("click", start1);
+        startBtn11.addEventListener("click", start11);
+// pauseBtn1.addEventListener("click", pause1);
+        stopBtn1.addEventListener("click", stop1);
+
+        var startBtn2 = document.getElementById("startBtn-2");
+// var pauseBtn2 = document.getElementById("pauseBtn-2");
+        var stopBtn2 = document.getElementById("stopBtn-2");
+        var inputField2 = document.getElementById("inputField-2");
+
+// 绑定按钮点击事件
+        startBtn2.addEventListener("click", start2);
+// pauseBtn2.addEventListener("click", pause2);
+        stopBtn2.addEventListener("click", stop2);
     }
-    // 获取按钮和输入框的元素
-    var startBtn1 = document.getElementById("startBtn-1");
-    // var pauseBtn1 = document.getElementById("pauseBtn-1");
-    var stopBtn1 = document.getElementById("stopBtn-1");
-    var inputField1 = document.getElementById("inputField-1");
 
-    // 绑定按钮点击事件
-    startBtn1.addEventListener("click", start1);
-    // pauseBtn1.addEventListener("click", pause1);
-    stopBtn1.addEventListener("click", stop1);
+    function startMonitoring(){
+        var aids=getSelectedAwemeId()
+        var timeStand=document.getElementById("time-stand").value
+        axios.get("monitorStart/digCount",
+            {
+                params: {
+                    aids: aids.join(','),
+                    timeStand: timeStand
+                }
+            }).then((res) => {
+                alert(res.data.msg)
+            if (res.data.success){
+                makeBtnDie("startBtn-3");
+                getMonitoringList()
+            }
+        })
+        .catch((error) => {
+            if (error == "Error: Request failed with status code 403") {
+                alert("无操作权限");
+            }
+        })
+    }
+     function stopMonitoring(){
+         var aids=getSelectedAwemeId()
+         axios.get("monitorStop/digCount",
+             {
+                 params: {
+                     aids: aids.join(',')
+                 }
+             }).then((res) => {
+             alert(res.data.msg)
+             if (res.data.success){
+                 makeBtnLive("startBtn-3");
+             }
+         })
+         .catch((error) => {
+             if (error == "Error: Request failed with status code 403") {
+                 alert("无操作权限");
+             }
+         })
+    }
 
-    var startBtn2 = document.getElementById("startBtn-2");
-    // var pauseBtn2 = document.getElementById("pauseBtn-2");
-    var stopBtn2 = document.getElementById("stopBtn-2");
-    var inputField2 = document.getElementById("inputField-2");
+    function getGroups(){
+        axios.get("/index/monitors").then((res)=>{
+            if (res.data.success){
+                var videoVos=res.data.data
+                renderOptions(videoVos)
+                console.log(videoVos)
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+    }
+    function renderOptions(data) {
+        var selectElement = document.getElementById("aweme-select");
+        removeChilds(selectElement)
 
-    // 绑定按钮点击事件
-    startBtn2.addEventListener("click", start2);
-    // pauseBtn2.addEventListener("click", pause2);
-    stopBtn2.addEventListener("click", stop2);
+        for (var i = 0; i < data.length; i++) {
+            var option = document.createElement("option");
+            option.value = data[i].awemeId;
+            option.text = data[i].titleInfo;
+            selectElement.appendChild(option);
+        }
+    }
+    function removeChilds(ele){
+        const childNodes = ele.childNodes;
+
+        // 循环遍历所有子节点并删除
+        for (let i = childNodes.length - 1; i >= 0; i--) {
+            ele.removeChild(childNodes[i]);
+        }
+    }
+
+    function removeChildsRemainFirst(ele){
+        const childNodes = ele.childNodes;
+
+        // 循环遍历所有子节点并删除
+        for (let i = childNodes.length - 1; i > 0; i--) {
+            ele.removeChild(childNodes[i]);
+        }
+    }
+
+    function getSelectedAwemeId() {
+        var selectElement = document.getElementById("aweme-select");
+        const selectedAwemeIds = [];
+        for (let i = 0; i < selectElement.options.length; i++) {
+            if (selectElement.options[i].selected) {
+                selectedAwemeIds.push(selectElement.options[i].value);
+            }
+        }
+        // var selectedAwemeId = selectElement.value;
+        return selectedAwemeIds
+        // analyzer(selectedAwemeId)
+    }
+    function selectVideo(){
+        var selectElement = document.getElementById("aweme-select");
+        var aid = selectElement.value;
+        //todo 发送请求，表示该视频能否监控 / 已经在监控
+        axios.get("/monitor/isGoing?aid="+aid).then((res)=>{
+            if (res.data.success){
+                var isGoing=res.data.data;
+                if (isGoing==1){
+                    makeBtnDie("startBtn-3");
+                }else {
+                    makeBtnLive("startBtn-3");
+                }
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+    }
+    function makeBtnDie(id){
+        var btn=document.getElementById(id)
+        btn.disabled=true;
+    }
+    function makeBtnLive(id){
+        var btn=document.getElementById(id)
+        btn.disabled=false;
+    }
+    function getVideoGroups(){
+        axios.get("/index/groups").then((res)=>{
+            if (res.data.success){
+                var groupList=res.data.data
+                renderGroupList(groupList)
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+    }
+
+    function selectGroup(){
+        var selectElement = document.getElementById("groupSelect");
+        var id=selectElement.value
+        byGroup(id)
+        // renderRightCard(id)
+    }
+    function byGroup(data){
+        axios.get("group/byG/"+data).then((res)=>{
+            if (res.data.success){
+                var videoList=res.data.data
+                renderOptionsContainVideoList(videoList)
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+    }
+    function renderOptionsContainVideoList(vList){
+        var selectElement = document.getElementById("aweme-select");
+        removeChilds(selectElement)
+        var option0 = document.createElement("option");
+        option0.value = -1;
+        option0.text = "请选择视频";
+        selectElement.appendChild(option0);
+        for (var i = 0; i < vList.length; i++) {
+            var option = document.createElement("option");
+            option.value = vList[i].awemeId;
+            option.text = vList[i].titleInfo;
+            selectElement.appendChild(option);
+        }
+    }
+    function renderGroupList(data) {
+        var selectElement = document.getElementById("groupSelect");
+        removeChildsRemainFirst(selectElement)
+        for (var i = 0; i < data.length; i++) {
+            var option = document.createElement("option");
+            option.value = data[i].id;
+            option.text = data[i].title;
+            selectElement.appendChild(option);
+        }
+    }
+
+    function renderMonitorList(monitorList) {
+        var tableBody = document.querySelector("#monitorTable tbody");
+        removeChilds(tableBody)
+        monitorList.forEach(function (monitor) {
+            var row = document.createElement("tr");
+
+            var aidCell = document.createElement("td");
+            aidCell.textContent = monitor.aid;
+            row.appendChild(aidCell);
+
+            var titleCell = document.createElement("td");
+            // titleCell.textContent = monitor.title;
+            var link = document.createElement("a");
+            var searchParams = 'searchType=0&awemeId='+encodeURIComponent(monitor.aid);
+            link.href = "/commentList.html?"+searchParams+""; // 替换xxxx为实际的awemeId
+            link.target="_blank"
+            link.textContent = monitor.title;
+            titleCell.appendChild(link)
+            row.appendChild(titleCell);
+
+            var maxChangeCell = document.createElement("td");
+            maxChangeCell.textContent = monitor.maxChange;
+            row.appendChild(maxChangeCell);
+
+            var startDateCell = document.createElement("td");
+            startDateCell.textContent = monitor.startDate;
+            row.appendChild(startDateCell);
+
+            tableBody.appendChild(row);
+        })
+    }
+    function renderMonitoredList(monitorList) {
+        var tableBody = document.querySelector("#monitoredTable tbody");
+        removeChilds(tableBody)
+        monitorList.forEach(function (monitor) {
+            var row = document.createElement("tr");
+
+            var aidCell = document.createElement("td");
+            aidCell.textContent = monitor.aid;
+            row.appendChild(aidCell);
+
+            var titleCell = document.createElement("td");
+            // titleCell.textContent = monitor.title;
+            var link = document.createElement("a");
+            var searchParams = 'searchType=0&awemeId='+encodeURIComponent(monitor.aid);
+            link.href = "/commentList.html?"+searchParams+""; // 替换xxxx为实际的awemeId
+            link.target="_blank"
+            link.textContent = monitor.title;
+            titleCell.appendChild(link)
+            row.appendChild(titleCell);
+
+            var maxChangeCell = document.createElement("td");
+            maxChangeCell.textContent = monitor.maxChange;
+            row.appendChild(maxChangeCell);
+
+            var startDateCell = document.createElement("td");
+            startDateCell.textContent = monitor.startDate;
+            row.appendChild(startDateCell);
+
+            tableBody.appendChild(row);
+        })
+    }
+
+    function renderBoomList(monitorList) {
+        var tableBody = document.querySelector("#monitorBoomTable tbody");
+        removeChilds(tableBody)
+        monitorList.forEach(function (monitor) {
+            var row = document.createElement("tr");
+
+            var aidCell = document.createElement("td");
+            aidCell.textContent = monitor.aid;
+            row.appendChild(aidCell);
+
+            var curCell = document.createElement("td");
+            curCell.textContent = monitor.cur;
+            row.appendChild(curCell);
+
+            var titleCell = document.createElement("td");
+            titleCell.textContent = monitor.videoInfoVo.titleInfo;
+            row.appendChild(titleCell);
+
+            var textCell = document.createElement("td");
+            textCell.textContent = monitor.commentDetailsVo.text;
+            row.appendChild(textCell);
 
 
-    var redDot = document.getElementById("redDot");
-    // var yellowDot = document.getElementById("yellowDot");
-    var greenDot = document.getElementById("greenDot");
-    var redDot2 = document.getElementById("redDot2");
-    var yellowDot2 = document.getElementById("yellowDot2");
-    var greenDot2 = document.getElementById("greenDot2");
+
+
+            tableBody.appendChild(row);
+        })
+    }
+
+    function getMonitoringList(){
+        axios.get("monitor/isGoingList").then((res) => {
+            if (res.data.success){
+                var monitorList=res.data.data
+                renderMonitorList(monitorList)
+            }
+        })
+            .catch((error) => {
+                if (error == "Error: Request failed with status code 403") {
+                    alert("无操作权限");
+                }
+            })
+    }
+    function getMonitoredList(){
+        axios.get("monitor/list").then((res) => {
+            if (res.data.success){
+                var monitorList=res.data.data
+                renderMonitoredList(monitorList)
+            }
+        })
+            .catch((error) => {
+                if (error == "Error: Request failed with status code 403") {
+                    alert("无操作权限");
+                }
+            })
+    }
+
+    function getBoomMonitoringList(){
+        axios.get("monitor/BoomList").then((res) => {
+            if (res.data.success){
+                var boomList=res.data.data
+                renderBoomList(boomList)
+            }
+        })
+            .catch((error) => {
+                if (error == "Error: Request failed with status code 403") {
+                    alert("无操作权限");
+                }
+            })
+    }
+
+
 
     function startLight() {
         redDot.classList.remove("red");
@@ -235,11 +557,30 @@
 
     // 开始按钮点击事件处理函数
     function start1() {
-        startLight()
+        // startLight()
+        var inputField1 = document.getElementById("inputField-1");
         var inputText = inputField1.value;
-        var url="https://www.douyin.com/discover?modal_id="+inputText
+        // var url="https://www.douyin.com/discover?modal_id="+inputText
+        var url=inputText
         // 在这里执行开始操作
         axios.get("/startHarvestUrl?url="+url).then((res)=>{
+            if (res.data.success){
+                alert(res.data.msg)
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+    }
+    function start11() {
+        // startLight()
+        var inputField1 = document.getElementById("inputField-1");
+        var inputText = inputField1.value;
+        // var url="https://www.douyin.com/discover?modal_id="+inputText
+        var url=inputText
+        // 在这里执行开始操作
+        axios.get("/startHarvestUrlAndMonitor?url="+url).then((res)=>{
             if (res.data.success){
                 alert(res.data.msg)
             }
@@ -258,7 +599,7 @@
 
     // 停止按钮点击事件处理函数
     function stop1() {
-        stopLight()
+        // stopLight()
         // 在这里执行开始操作
         axios.get("/stopHarvestUrl").then((res)=>{
             if (res.data.success){

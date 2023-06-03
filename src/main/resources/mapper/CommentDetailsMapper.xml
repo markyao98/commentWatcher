@@ -12,6 +12,7 @@
         SELECT ip_label,COUNT(*) AS cnt FROM harvest_comment_details WHERE aweme_id=#{awemeId} GROUP BY ip_label ORDER BY cnt DESC
     </select>
 
+
     <select id="selectIpModelDescByAids" parameterType="String" resultType="IpModel" >
         SELECT ip_label,COUNT(*) AS cnt FROM harvest_comment_details
             where aweme_Id in
@@ -33,6 +34,8 @@
     <select id="searchByIpLabelSort" resultType="Long">
         SELECT id FROM harvest_comment_details WHERE aweme_id=#{awemeId} AND ip_label=#{ipLabel} order by #{sortField}
     </select>
+
+
 
 
 </mapper>

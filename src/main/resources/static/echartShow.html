@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>观察结果展示展示</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+    <script src="./js/axios-0.18.0.js"></script>
+    <script src="https://cdn.staticfile.org/jquery/3.5.1/jquery.min.js"></script>
+
+    <style>
+        .card {
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 2px 2px 5px #ccc;
+            text-align: center;
+        }
+
+        #chart{
+            text-align: center;
+            margin: 0 auto;
+        }
+        #textPanel{
+            text-align: center;
+            width: 380px;
+            margin: 0 auto;
+
+            word-wrap: break-word;
+            border: 1px solid #ccc;
+            padding: 10px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+        <div id="textPanel" >></div>
+
+<!--    <div style="width: 200px; word-wrap: break-word; border: 1px solid #ccc; padding: 10px;">-->
+<!--        这是一段文本，当它超出容器的宽度时，会自动换行。-->
+<!--    </div>-->
+
+    <br>
+    <br>
+
+    <div id="chart" style="width: 800px; height: 600px;"></div>
+
+</div>
+
+
+<script>
+
+    window.onload=function (){
+        var urlParams = new URLSearchParams(window.location.search);
+        if (urlParams!=null){
+            var did = urlParams.get('did');
+            var text = urlParams.get('text');
+            renderTextPanel(text);
+            axios.get("/moditor/show?did="+did).then((res)=>{
+                if (res.data.success){
+                    var timeData=res.data.data.timeData
+                    var likeData=res.data.data.likeData
+                    var replyData=res.data.data.replyData
+                    createChart(timeData,likeData,replyData)
+                }
+            }).catch((error)=>{
+                if (error == "Error: Request failed with status code 403"){
+                    alert("无操作权限")
+                }
+            });
+        }
+        else {
+            alert("请求参数为空!")
+        }
+    }
+    // 模拟数据，时间序列和点赞量、回复量对应的数组
+    // var timeData = ['00:00:00', '00:00:30', '00:01:00', '00:01:30', '00:02:00', '00:02:30', '00:03:00', '00:03:30', '00:04:00', '00:04:30', '00:05:00'];
+    // var likeData = [10, 15, 8, 12, 20, 18, 25, 22, 17, 14, 19];
+    // var replyData = [5, 8, 6, 10, 15, 12, 20, 16, 11, 9, 13];
+    function renderTextPanel(text){
+        var textPanel = document.getElementById("textPanel");
+        textPanel.textContent=text
+    }
+    function createChart(timeData,likeData,replyData){
+        // 创建图表实例
+        var chart = echarts.init(document.getElementById('chart'));
+
+        // 配置项
+        var options = {
+            title: {
+                text: '评论点赞量和回复量动态变化趋势'
+            },
+            tooltip: {
+                trigger: 'axis'
+            },
+            legend: {
+                data: ['点赞量', '回复量']
+            },
+            dataZoom: [
+                {
+                    type: 'slider',
+                    xAxisIndex: 0,
+                    filterMode: 'empty'
+                }
+            ],
+            xAxis: {
+                type: 'category',
+                boundaryGap: false,
+                data: timeData
+            },
+            yAxis: {
+                type: 'value'
+            },
+            series: [
+                {
+                    name: '点赞量',
+                    type: 'line',
+                    data: likeData
+                },
+                {
+                    name: '回复量',
+                    type: 'line',
+                    data: replyData
+                }
+            ]
+        };
+
+        // 使用配置项绘制图表
+        chart.setOption(options);
+    }
+</script>
+</body>
+</html>

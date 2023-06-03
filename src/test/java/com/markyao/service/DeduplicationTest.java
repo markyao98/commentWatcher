@@ -5,6 +5,7 @@ import com.markyao.mapper.CommentDetailsMapper;
 import com.markyao.mapper.CommentMapper;
 import com.markyao.mapper.CommentUserMapper;
 import com.markyao.model.pojo.Comment;
+import com.markyao.model.pojo.CommentDetails;
 import com.markyao.model.pojo.CommentUser;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+
 @Slf4j
 @SpringBootTest
 public class DeduplicationTest {
@@ -51,4 +54,19 @@ public class DeduplicationTest {
         );
         log.info("总共处理了{} 条脏数据",total.get());
     }
+
+    @Autowired
+    DuplicateService duplicateService;
+    /**
+     * 通过评论的cid删除脏数据
+     */
+    @Test
+    void t2(){
+        String cids[]={"7239736454199935783","7239736411749172025","7239736288369558312","7239735962937934596",
+                "7239737957535515451","7239735299617260323","7239740407034495800",
+                "7239740066574304032","7239740188372845327","7239743075081339659","7239734700494750467"};
+        duplicateService.deleteAllByCids(cids);
+
+    }
+
 }
