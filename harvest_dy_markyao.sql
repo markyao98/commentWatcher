@@ -1,8 +1,9 @@
 /*
 SQLyog Ultimate v12.09 (64 bit)
-MySQL - 5.7.38-log : Database - harvest_douyin_yrw
+MySQL - 5.7.38-log : Database - harvest_douyin_markyao
 *********************************************************************
-*/
+*/
+
 
 /*!40101 SET NAMES utf8 */;
 
@@ -12,7 +13,9 @@ MySQL - 5.7.38-log : Database - harvest_douyin_yrw
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-USE `harvest_douyin_yrw`;
+DROP DATABASE IF EXISTS `harvest_douyin_markyao`;
+CREATE DATABASE harvest_douyin_markyao;
+USE `harvest_douyin_markyao`;
 
 /*Table structure for table `buf_word_cloud` */
 
