@@ -7,7 +7,7 @@ mybatis-plus:
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/harvest_douyin_yrw?useUnicode=true&&serverTimeZone=UTC
+    url: jdbc:mysql://localhost:3306/harvest_douyin_markyao?useUnicode=true&&serverTimeZone=UTC
     username: root
     password: root
   main:
