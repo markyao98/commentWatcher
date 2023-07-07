@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.markyao.mapper.MonitorCommentDiggMapper">
+
+
+
+    <select id="selectAids" resultType="Long">
+        SELECT DISTINCT(aweme_id) FROM harvest_comment_details
+        WHERE id IN(
+            SELECT cdid FROM monitor_comment_digg ORDER BY create_time
+        )
+    </select>
+
+    <select id="selectMinCreateTimeForCd" resultType="CdidMinLeast">
+        SELECT cdid,MIN(create_time) as createTime FROM monitor_comment_digg GROUP BY cdid
+    </select>
+
+       <select id="selectMinCreateTimeByCdid" parameterType="Long" resultType="Date">
+           SELECT MIN(create_time) FROM `monitor_comment_digg` WHERE cdid=#{cdid}
+       </select>
+
+
+</mapper>

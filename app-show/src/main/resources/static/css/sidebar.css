@@ -1,0 +1,48 @@
+
+    /* ... */
+/*    #sidebar {*/
+/*    width: 150px;*/
+/*    background-color: #f2f2f2;*/
+/*    padding: 10px;*/
+/*        !*background-color: #f5f5f5;*!*/
+/*}*/
+
+    #sidebar {
+        border-top: 1px solid white;
+        background-color: rgba(85, 85, 85, 0.64);
+        width: 200px;
+        height: 1020px;
+        top: 80px;
+        left: 0;
+        padding: 20px;
+    }
+
+    #sidebar ul {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    #sidebar li a {
+        display: block;
+        color: white;
+        padding: 10px 0;
+        text-decoration: none;
+    }
+
+    #sidebar li a:hover {
+        background-color: white;
+        color: black;
+    }
+
+
+    #page-container{
+        flex: 1;
+        padding: 10px;
+    }
+
+    header {
+        background-color: #555;
+        color: white;
+        padding: 20px;
+    }

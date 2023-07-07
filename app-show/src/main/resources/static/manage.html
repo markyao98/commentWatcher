@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>管理页</title>
+    <link rel="stylesheet" href="css/custom-styles.css">
+
+    <link rel="stylesheet" type="text/css" href="./css/sidebar.css">
+    <script src="./js/sidebar.js"></script>
+<style>
+    .header {
+        /*height: 50px;*/
+        text-align: center;
+        font-size: 24px;
+        line-height: 50px;
+        background-color: #555;
+        color: white;
+        padding: 20px;
+    }
+    /* 容器样式 */
+    .container {
+        display: flex;
+        flex-direction: row;
+        height: calc(100vh - 50px); /* 让容器填满剩余的空间 */
+    }
+    .card {
+        display: flex;
+        /*flex-direction: column;*/
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-shadow: 2px 2px 5px #ccc;
+        /*text-align: center;*/
+    }
+
+    #groupSelect{
+        width: 300px;
+    }
+    #videoList{
+        width: 800px;
+    }
+
+    .popup-form {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #fff;
+        padding: 20px;
+        border: 1px solid #ccc;
+        z-index: 9999;
+    }
+    .h-title{
+        text-align: center;
+    }
+    .page-01{
+        /*display: flex;*/
+    }
+    .page-left{
+        /*flex: 1;*/
+    }
+    .page-right{
+        display: flex;
+        /*flex: 1;*/
+    }
+
+    .page-right ul {
+        list-style: none;
+        flex: 1;
+        /*padding: 0;*/
+    }
+
+    /*.page-right li {*/
+    /*    margin-bottom: 10px;*/
+    /*}*/
+
+    .group-img {
+        border: 2px solid #888888;
+        width: 180px;
+        height: 180px;
+        /*border-radius: 50%;*/
+        margin-right: 10px;
+    }
+
+    #group-title {
+        font-weight: bold;
+        font-size: 18px;
+    }
+
+    #group-desc {
+        font-size: 14px;
+        color: gray;
+        margin-left: 10px;
+    }
+    #right-card{
+        width: 1200px;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        /*margin: 20px;*/
+        display: flex;
+        /*flex-direction: column;*/
+        align-items: center;
+    }
+    #group-info{
+        display: flex;
+        flex:1;
+        /*align-items: center;*/
+    }
+
+    #group-videos{
+        list-style: disc;
+        flex:1;
+
+    }
+    #formContainer{
+        display: none;
+    }
+</style>
+</head>
+<body>
+<div class="header">
+    <h1 style="text-align: center">Dy数据收集系统-管理界面</h1>
+    <span>          作者————@他看到了自己</span>
+
+</div>
+<div class="container">
+    <div id="sidebar">
+        <ul>
+            <li><a href="./commentList.html">评论列表</a></li>
+            <li><a href="./harvest.html">数据采集器</a></li>
+            <li><a href="./anayazer.html">数据分析器</a></li>
+            <li><a href="./manage.html">管理页</a></li>
+        </ul>
+    </div>
+
+<div id="page-container">
+<h1 class="h-title">分组管理</h1>
+<h2>选择分组</h2>
+<div class="page-01">
+    <div class="page-left">
+        <select id="groupSelect" class="custom-select">
+            <option value="-1">请选择</option>
+        </select>
+        <button onclick="selectGroup()">确认</button>
+        <button onclick="addGroup()">添加分组</button>
+    </div>
+    <div id="right-card" style="display: none" class="page-right">
+        <ul id="group-info">
+            <li id="group-img"></li>
+            <li id="group-title">分组标题</li>
+            <li id="group-desc">分组描述信息..</li>
+        </ul>
+
+        <ul id="group-videos">
+        </ul>
+    </div>
+</div>
+
+    <div id="formContainer" class="popup-form">
+        <form id="myForm" onsubmit="submitForm(event)">
+            <label for="form-title">分组标题:</label>
+            <input type="text" id="form-title" name="title" required><br><br>
+            <label for="form-desc">分组描述信息:</label>
+            <input type="text" id="form-desc" name="desc" required><br><br>
+            <label for="form-img">分组封面:</label>
+            <input type="file" id="form-img" name="img" accept="image/*" required><br><br>
+            <input type="submit" value="提交">
+            <input type="button" onclick="closeForm()" value="取消">
+        </form>
+    </div>
+
+<h2>可添加视频列表</h2>
+
+<select id="videoList" class="custom-select" multiple>
+<!--    <option value="video1" >video1</option>-->
+<!--    <option value="video1" >video1</option>-->
+<!--    <option value="video1" >video1</option>-->
+    <!-- 更多分组选项 -->
+</select>
+    <button onclick="addToGroup()">点击添加</button>
+</div>
+</div>
+</body>
+<script src="./js/axios-0.18.0.js"></script>
+
+<script>
+
+    window.onload=function (){
+        getVideoGroups()
+    }
+
+    function getVideoGroups(){
+        axios.get("/index/groups").then((res)=>{
+            if (res.data.success){
+                var groupList=res.data.data
+                renderOptions(groupList,"groupSelect")
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+    }
+    function selectGroup(){
+        var selectElement = document.getElementById("groupSelect");
+        var id=selectElement.value
+        byGroup(id)
+        renderRightCard(id)
+    }
+    function renderOptions(data,id) {
+        var selectElement = document.getElementById(id);
+
+        for (var i = 0; i < data.length; i++) {
+            var option = document.createElement("option");
+            option.value = data[i].id;
+            option.text = data[i].title;
+            // option.onchange =function (){
+            //     byGroup(data[i]);
+            // }
+            selectElement.appendChild(option);
+        }
+    }
+    function byGroup(data){
+        // var id=data.id;
+        // var title=data.title;
+        // var desc=data.desc;
+        // var src=data.img;
+        // renderRightCard(title,desc,src);
+        axios.get("group/byG").then((res)=>{
+            if (res.data.success){
+                var videoList=res.data.data
+                renderOptionsVideoList(videoList)
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+
+        axios.get("group/byG/"+data).then((res)=>{
+            if (res.data.success){
+                var videoList=res.data.data
+                renderOptionsContainVideoList(videoList)
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+    }
+    function removeChilds(ele){
+        const childNodes = ele.childNodes;
+
+        // 循环遍历所有子节点并删除
+        for (let i = childNodes.length - 1; i >= 0; i--) {
+            ele.removeChild(childNodes[i]);
+        }
+    }
+
+    function renderOptionsContainVideoList(vList){
+        var gVs= document.getElementById("group-videos");
+        removeChilds(gVs)
+
+        for (var i = 0; i < vList.length; i++) {
+            var li = document.createElement("li");
+            li.innerText = vList[i].titleInfo;
+            gVs.appendChild(li);
+        }
+    }
+    function renderRightCard(id){
+        axios.get("groupinfo/"+id).then((res)=>{
+            var imgLi = document.getElementById("group-img");
+
+            removeChilds(imgLi)
+
+            if (res.data.success){
+                var groupinfo=res.data.data
+
+                var title=groupinfo.title;
+                var desc=groupinfo.descMsg;
+                var rc = document.getElementById("right-card");
+
+                var imgE = document.createElement("img");
+                imgE.src="./groupsImg/" +groupinfo.img;
+                imgE.classList.add("group-img");
+                imgLi.appendChild(imgE)
+
+                var gt = document.getElementById("group-title");
+                gt.innerText=title
+
+                var gd = document.getElementById("group-desc");
+                gd.innerText=desc
+
+                rc.style.display = rc.style.display== 'none' ? 'block' : 'none';
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+
+
+    }
+    function renderOptionsVideoList(videoList){
+        var selectRoot = document.getElementById("videoList");
+        removeChilds(selectRoot)
+
+        for (var i = 0; i < videoList.length; i++) {
+            var option = document.createElement("option");
+            option.value = videoList[i].id;
+            option.text = videoList[i].titleInfo;
+
+            selectRoot.appendChild(option);
+        }
+    }
+    function submitForm(event) {
+        event.preventDefault(); // 阻止表单的默认提交行为
+        // 处理表单提交逻辑，例如发送到服务器或进行其他操作
+        // 获取表单元素和输入值
+
+        var form = document.getElementById("myForm");
+        var formData = new FormData(form);
+
+        axios.post("/addgroup", formData)
+            .then(function(response) {
+                // 处理成功响应
+                // 表单提交后，隐藏表单
+                alert(response.data.msg);
+                closeForm();
+            })
+            .catch(function(error) {
+                // 处理错误
+                console.log(error);
+            });
+
+    }
+
+    function closeForm(){
+        document.getElementById("formContainer").style.display = "none";
+    }
+    function addGroup(){
+        document.getElementById("formContainer").style.display = "block";
+    }
+  function addToGroup() {
+    // 获取选中的分组
+    var groupSelect = document.getElementById("videoList");
+
+    var vids = [];
+    for (var i = 0; i < groupSelect.options.length; i++) {
+      if (groupSelect.options[i].selected) {
+          vids.push(groupSelect.options[i].value);
+      }
+    }
+    var gid=document.getElementById("groupSelect").value
+      axios.get("/group/addVideo",
+          {
+              params: {
+                  vids: vids.join(','),
+                  gid: gid
+              }
+          }).then((res) => {
+          if (res.data.success) {
+              alert(res.data.msg)
+              byGroup(gid)
+          }
+      })
+          .catch((error) => {
+              if (error == "Error: Request failed with status code 403") {
+                  alert("无操作权限");
+              }
+          })
+
+
+
+
+    // 添加视频到选中的分组
+    // for (var i = 0; i < selectedGroups.length; i++) {
+    //   var group = selectedGroups[i];
+    //   var groupElement = document.getElementById(group);
+    //   if (groupElement) {
+    //     var videoElement = document.createElement("li");
+    //     videoElement.textContent = video;
+    //     groupElement.appendChild(videoElement);
+    //   }
+    // }
+  }
+</script>
+</html>

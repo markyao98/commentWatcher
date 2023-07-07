@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.markyao.mapper.HarvestCommentUrlMapper">
+
+    <insert id="insertBatch" parameterType="java.util.List">
+        INSERT INTO harvest_comment_url (id,url,author_id,video_id) VALUES
+         <foreach collection="list" item="item" separator=",">
+             (0,#{item.url},#{item.authorId},#{item.videoId})
+         </foreach>
+    </insert>
+
+    <insert id="insertForId" parameterType="HarvestCommentUrl" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO harvest_comment_url (id,url,video_id,create_time,update_time)
+        VALUES
+            (0, #{url}, #{videoId},#{createTime}, #{updateTime})
+    </insert>
+</mapper>
