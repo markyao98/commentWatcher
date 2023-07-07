@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>分析系统</title>
+
+    <link rel="stylesheet" type="text/css" href="./css/sidebar.css">
+    <link rel="stylesheet" type="text/css" href="./css/commentlist.css">
+    <link rel="stylesheet" type="text/css" href="./css/manage.css">
+
+    <script src="./js/sidebar.js"></script>
+    <link rel="stylesheet" href="css/custom-styles.css">
+    <script src="./js/axios-0.18.0.js"></script>
+    <!--    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha384-eJzj4kuHKnAe5/58ONtmtmZUZyQe9q4jjyOAGD+vjQ6B6-->
+
+</head>
+<style>
+    /* 标题栏样式 */
+    .header {
+        /*height: 50px;*/
+        text-align: center;
+        font-size: 24px;
+        line-height: 50px;
+        background-color: #555;
+        color: white;
+        padding: 20px;
+    }
+
+    /* 容器样式 */
+    .container {
+        display: flex;
+        flex-direction: row;
+        height: calc(100vh - 50px); /* 让容器填满剩余的空间 */
+    }
+    .card {
+        display: flex;
+        /*flex-direction: column;*/
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-shadow: 2px 2px 5px #ccc;
+        /*text-align: center;*/
+    }
+
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+
+    .loading-message {
+        color: #fff;
+        font-size: 24px;
+    }
+    #imageContainer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .left-data, .right-data {
+        flex: 1;
+        text-align: center;
+    }
+
+    .time-node {
+        padding: 10px;
+        cursor: pointer;
+    }
+
+    .time-node.hovered {
+        background-color: #eee;
+    }
+
+    .user-node {
+        padding: 10px;
+        cursor: pointer;
+    }
+
+    .user-node.hovered {
+        background-color: #eee;
+    }
+    .cnt-node {
+        padding: 10px;
+        cursor: pointer;
+    }
+
+    .cnt-node.hovered {
+        background-color: #cccccc;
+    }
+
+    .comments-list {
+        margin-left: 20px;
+        list-style-type: none;
+        padding: 0;
+    }
+
+    .comments-list li {
+        margin-bottom: 5px;
+    }
+    .comments-users-list {
+        margin-left: 20px;
+        list-style-type: none;
+        padding: 0;
+    }
+
+    .comments-users-list li {
+        margin-bottom: 5px;
+    }
+    .comments-cnt-list {
+        margin-left: 20px;
+        list-style-type: none;
+        padding: 0;
+    }
+
+    .comments-cnt-list li {
+        margin-bottom: 5px;
+    }
+
+
+    .column {
+        flex: 1;
+    }
+
+    .my-link-class {
+        color: #0a934c;
+        font-weight: bold;
+        font-size: 18px; /* 改变字体大小，根据需要自定义 */
+        text-decoration: none;
+        transition: color 0.3s ease; /* 添加过渡效果，使颜色变化平滑 */
+
+        /* 添加其他样式属性，根据需要自定义 */
+    }
+
+    .my-link-class:hover {
+        color: #0613d0; /* 鼠标移入时的颜色 */
+    }
+
+</style>
+<body>
+
+<div class="header">
+    <h1 style="text-align: center">Dy数据收集系统-分析器</h1>
+    <span>          作者————@他看到了自己</span>
+
+</div>
+
+<div class="container">
+    <div id="sidebar">
+        <ul>
+            <li><a href="./commentList.html">评论列表</a></li>
+            <li><a href="./harvest.html">数据采集器</a></li>
+            <li><a href="./anayazer.html">数据分析器</a></li>
+            <li><a href="./manage.html">管理页</a></li>
+
+        </ul>
+    </div>
+
+
+    <div id="page-container">
+        <div>
+            <select id="groupSelect" class="custom-select">
+                <option value="-1">请选择分组</option>
+            </select>
+            <button onclick="selectGroup()">确认分组</button>
+            <select  style="width: 1000px" class="custom-select" id="aweme-select" onchange="getSelectedAwemeId()" multiple>
+                <option value="">请选择视频</option>
+            </select>
+            <div id="right-card" style="display: none" class="page-right">
+                <ul id="group-info">
+                    <li id="group-img"></li>
+                    <li id="group-title">分组标题</li>
+                    <li id="group-desc">分组描述信息..</li>
+                </ul>
+            </div>
+
+            <div style="text-align: center">
+                <br><button style="font-size: large" onclick="singleAnalyzer()">开始分析</button>
+            </div>
+        </div>
+
+        <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+            <span class="loading-message">正在分析生成分析结果...</span>
+        </div>
+
+        <div id="totals" style="display: none">
+
+        </div>
+
+        <h2 style="text-align: center">词云</h2>
+        <div class="card" id="imageContainer">
+            <!-- 左侧数据 -->
+            <div class="left-data">
+                <h4>TOP10</h4>
+            </div>
+
+            <!-- 右侧数据 -->
+            <div class="right-data">
+                <h4>TOP10-20</h4>
+            </div>
+            <!--            <img src="./imgs/xx.png" width="600" height="600"/>-->
+
+        </div>
+        <h2 id="top20-one-minute" style="text-align: center">同一分钟内的评论(TOP20)</h2>
+
+        <div class="card">
+            <!--            日期数据-->
+            <div id="tree-root"></div>
+        </div>
+
+        <h2 style="text-align: center">Ip信息排行榜</h2>
+        <div class="card">
+
+            <div class="column" id="left-column">
+                <h4>非大陆地区以及境外ip:</h4>
+            </div>
+            <!--            ipModels-->
+            <div class="column" id="right-column" >
+                <h4>所有ip统计:</h4>
+            </div>
+        </div>
+        <h2 style="text-align: center">评论客分析</h2>
+
+        <div class="card">
+            <!--            日期数据-->
+            <div id="tree-user-root"></div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+
+    function getVideoGroups(){
+        axios.get("/index/groups").then((res)=>{
+            if (res.data.success){
+                var groupList=res.data.data
+                renderGroupList(groupList)
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+    }
+    function selectGroup(){
+        var selectElement = document.getElementById("groupSelect");
+        var id=selectElement.value
+        byGroup(id)
+        renderRightCard(id)
+    }
+    function byGroup(data){
+        axios.get("group/byG/"+data).then((res)=>{
+            if (res.data.success){
+                var videoList=res.data.data
+                renderOptionsContainVideoList(videoList)
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+    }
+    function renderRightCard(id){
+        axios.get("groupinfo/"+id).then((res)=>{
+            var imgLi = document.getElementById("group-img");
+            removeChilds(imgLi)
+            if (res.data.success){
+                var groupinfo=res.data.data
+
+                var title=groupinfo.title;
+                var desc=groupinfo.descMsg;
+                var rc = document.getElementById("right-card");
+
+                var imgE = document.createElement("img");
+                imgE.src="./groupsImg/" +groupinfo.img;
+                imgE.classList.add("group-img");
+                imgLi.appendChild(imgE)
+                var gt = document.getElementById("group-title");
+                gt.innerText=title
+                var gd = document.getElementById("group-desc");
+                gd.innerText=desc
+                rc.style.display = rc.style.display== 'none' ? 'block' : 'none';
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+
+
+    }
+    function removeChilds(ele){
+        const childNodes = ele.childNodes;
+
+        // 循环遍历所有子节点并删除
+        for (let i = childNodes.length - 1; i >= 0; i--) {
+            ele.removeChild(childNodes[i]);
+        }
+    }
+    function renderOptionsContainVideoList(vList){
+        renderOptions(vList)
+    }
+    function renderGroupList(data) {
+        var selectElement = document.getElementById("groupSelect");
+        removeChilds(selectElement)
+        for (var i = 0; i < data.length; i++) {
+            var option = document.createElement("option");
+            option.value = data[i].id;
+            option.text = data[i].title;
+            selectElement.appendChild(option);
+        }
+    }
+
+
+    window.onload=function (){
+        getVideoGroups()
+        // getGroups()
+    }
+    /*
+    var searchParams = 'searchType=1&searchMsg=' + encodeURIComponent(text)+'&awemeId='+encodeURIComponent(aid);
+                return '<p><a target="_blank" href="/commentList.html?' + searchParams + '">' + data + '</a></p>';
+     */
+    function singleAnalyzer(){
+        // console.log(getSelectedAwemeId())
+        analyzer(getSelectedAwemeId())
+    }
+    function renderIpmsg(aid,leftList,rightList){
+        if (aid==0){
+            console.log("aid==0...")
+        }
+        // 渲染左侧列表
+        const leftColumn = document.getElementById('left-column');
+        leftList.forEach(item => {
+            const listItem = document.createElement('div');
+            // listItem.textContent ="ip信息:【 "+ item.ipLabel +"】  出现次数:  【 "+item.cnt+" 】" +"  占比: 【 "+item.vic+" 】";
+            const text="ip信息:【 "+ item.ipLabel +"】  出现次数:  【 "+item.cnt+" 】" +"  占比: 【 "+item.div+" 】";
+            // 创建<a>标签
+            const link = document.createElement('a');
+            var searchParams = 'searchType=3&searchMsg=' + encodeURIComponent(item.ipLabel)+'&awemeId='+encodeURIComponent(aid);
+            link.href = "/commentList.html?"+searchParams+""; // 替换xxxx为实际的awemeId
+            link.textContent = text;
+            link.target="_blank"
+            link.classList.add("my-link-class");
+            // 将<a>标签添加到评论项中
+            listItem.appendChild(link);
+
+            leftColumn.appendChild(listItem);
+        });
+
+        // 渲染右侧列表
+        const rightColumn = document.getElementById('right-column');
+        rightList.forEach(item => {
+            const listItem = document.createElement('div');
+            // listItem.textContent ="ip信息:【 "+ item.ipLabel +"】  出现次数:  【 "+item.cnt+" 】" +"  占比: 【 "+item.vic+" 】";
+            const text="ip信息:【 "+ item.ipLabel +"】  出现次数:  【 "+item.cnt+" 】" +"  占比: 【 "+item.div+" 】";
+            // 创建<a>标签
+            const link = document.createElement('a');
+            var searchParams = 'searchType=3&searchMsg=' + encodeURIComponent(item.ipLabel)+'&awemeId='+encodeURIComponent(aid);
+            link.href = "/commentList.html?"+searchParams+""; // 替换xxxx为实际的awemeId
+            link.textContent = text;
+            link.target="_blank"
+            link.classList.add("my-link-class");
+
+            // 将<a>标签添加到评论项中
+            listItem.appendChild(link);
+            rightColumn.appendChild(listItem);
+        });
+    }
+
+    function buildTree(data,aid){
+        const rootElement = document.getElementById('tree-root');
+
+        // 获取所有子节点
+        const childNodes = rootElement.childNodes;
+
+        // 循环遍历所有子节点并删除
+        for (let i = childNodes.length - 1; i >= 0; i--) {
+            rootElement.removeChild(childNodes[i]);
+        }
+        // 添加收起按钮
+        const collapseButton = document.createElement('button');
+        collapseButton.textContent = '全部收起';
+        collapseButton.classList.add('collapse-button');
+        rootElement.appendChild(collapseButton);
+
+        // 定义点击收起按钮的行为
+        collapseButton.addEventListener('click', () => {
+            const commentsLists = document.querySelectorAll('.comments-list');
+            commentsLists.forEach(list => {
+                list.style.display = 'none'; // 将所有评论列表隐藏
+            });
+        });
+
+
+        data.forEach(entry => {
+
+            const time = Object.keys(entry)[0]; // 获取时间
+            const comments = entry[time]; // 获取评论列表
+
+            // 创建时间节点
+            const timeNode = document.createElement('div');
+            timeNode.textContent = `${time} (${comments.length})`; // 显示时间和评论数量
+            timeNode.classList.add('time-node');
+            rootElement.appendChild(timeNode);
+
+            // 创建评论列表
+            const commentsList = document.createElement('ul');
+            commentsList.classList.add('comments-list');
+            commentsList.style.display = 'none'; // 初始状态隐藏评论列表
+
+            // 创建<a>标签
+            const link = document.createElement('a');
+            var searchParams = 'searchType=4&searchMsg=' + encodeURIComponent(time)+'&awemeId='+encodeURIComponent(aid);
+            link.href = "/commentList.html?"+searchParams+""; // 替换xxxx为实际的awemeId
+            link.target="_blank"
+            link.textContent = '查看该时间段的评论';
+
+            // 将<a>标签添加到评论列表容器中的最上方
+            commentsList.prepend(link);
+            // 遍历评论列表
+            comments.forEach(comment => {
+                const text =" 评论内容: 【 "+ comment.text +" 】  ip信息: 【 "+comment.ipLabel+" 】"+" 具体评论时间: 【 "+comment.createTime+" 】";
+                // 创建评论项
+                const commentItem = document.createElement('li');
+                commentItem.textContent = text;
+                commentsList.appendChild(commentItem);
+            });
+
+            rootElement.appendChild(commentsList);
+            // 点击时间节点时展开或折叠评论列表
+            timeNode.addEventListener('click', () => {
+                commentsList.style.display = commentsList.style.display === 'none' ? 'block' : 'none'; // 切换隐藏和显示状态
+            });
+
+            timeNode.addEventListener('mouseenter', () => {
+                timeNode.classList.add('hovered'); // 添加鼠标悬停样式
+            });
+
+            timeNode.addEventListener('mouseleave', () => {
+                timeNode.classList.remove('hovered'); // 移除鼠标悬停样式
+            });
+        });
+
+    }
+
+    function getGroups(){
+        axios.get("/index").then((res)=>{
+            if (res.data.success){
+                var videoVos=res.data.data
+                renderOptions(videoVos)
+                console.log(videoVos)
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+    }
+
+    function buildUserTree(data){
+        const rootElement = document.getElementById('tree-user-root');
+
+        // 获取所有子节点
+        const childNodes = rootElement.childNodes;
+
+        // 循环遍历所有子节点并删除
+        for (let i = childNodes.length - 1; i >= 0; i--) {
+            rootElement.removeChild(childNodes[i]);
+        }
+        // 添加收起按钮
+        const collapseButton = document.createElement('button');
+        collapseButton.textContent = '全部收起';
+        collapseButton.classList.add('collapse-button');
+        rootElement.appendChild(collapseButton);
+
+        // 定义点击收起按钮的行为
+        collapseButton.addEventListener('click', () => {
+            const commentsLists = document.querySelectorAll('.comments-cnt-list');
+            commentsLists.forEach(list => {
+                list.style.display = 'none'; // 将所有评论列表隐藏
+            });
+        });
+
+
+        for (let key in data) {
+            if (data.hasOwnProperty(key)) {
+                const cntss = key; // 获取同用户评论数量
+                const commentDetailsVoList = data[key]; // 获取评论列表
+                var cntSname="【 发布数量: "+cntss+" 的用户集合 】";
+                // 创建数量节点
+                const cntNode = document.createElement('div');
+                // userNode.textContent = `${user.nickname} (${user.avatar})`; // 显示时间和评论数量
+                cntNode.textContent =cntSname; //
+                rootElement.appendChild(cntNode);
+                cntNode.classList.add('cnt-node');
+
+                const commentdetailsVoListUl = document.createElement('ul');
+                commentdetailsVoListUl.classList.add('comments-cnt-list');
+                commentdetailsVoListUl.style.display = 'none'; // 初始状态隐藏评论列表
+
+                commentDetailsVoList.forEach(entry =>{
+                    const user=entry.user
+                    const comments=entry.commentDetailList
+
+                    var name="xxx"+user.nickname.substr(0,1)+"某"
+                    var size=comments.length
+                    // 创建用户节点
+                    const userNode = document.createElement('div');
+                    // userNode.textContent = `${user.nickname} (${user.avatar})`; // 显示时间和评论数量
+                    userNode.textContent = name+" 发布数量( "+size+" )"; //
+                    const userImgNode = document.createElement('img');
+                    userImgNode.src=user.avatar
+                    userImgNode.style.width='30px'
+                    userImgNode.style.height='30px'
+                    userImgNode.style.borderRadius = '50%';  // 设置圆形状
+
+                    userNode.appendChild(userImgNode);
+                    userNode.classList.add('user-node');
+                    cntNode.appendChild(userNode);
+
+                    // 创建评论列表
+                    const commentsList = document.createElement('ul');
+                    commentsList.classList.add('comments-users-list');
+                    commentsList.style.display = 'none'; // 初始状态隐藏评论列表
+
+
+                    // 遍历评论列表
+                    comments.forEach(comment => {
+                        const text =" 评论内容: 【 "+ comment.text +" 】  ip信息: 【 "+comment.ipLabel+" 】"+" 具体评论时间: 【 "+comment.createTime+" 】"+" 具体视频: 【 "+comment.videoTitle+" 】";
+                        // 创建评论项
+                        const commentItem = document.createElement('li');
+                        commentItem.textContent = text;
+                        commentsList.appendChild(commentItem);
+                    });
+
+                    userNode.appendChild(commentsList);
+                    // 点击时间节点时展开或折叠评论列表
+                    userNode.addEventListener('click', () => {
+                        commentsList.style.display = commentsList.style.display === 'none' ? 'block' : 'none'; // 切换隐藏和显示状态
+                    });
+
+                    userNode.addEventListener('mouseenter', () => {
+                        userNode.classList.add('hovered'); // 添加鼠标悬停样式
+                    });
+
+                    userNode.addEventListener('mouseleave', () => {
+                        userNode.classList.remove('hovered'); // 移除鼠标悬停样式
+                    });
+
+                    commentdetailsVoListUl.appendChild(userNode)
+                });
+
+                cntNode.appendChild(commentdetailsVoListUl)
+
+                // 点击数量节点时展开或折叠评论列表
+                cntNode.addEventListener('dblclick', () => {
+                    commentdetailsVoListUl.style.display = commentdetailsVoListUl.style.display === 'none' ? 'block' : 'none'; // 切换隐藏和显示状态
+                });
+
+                cntNode.addEventListener('mouseenter', () => {
+                    cntNode.classList.add('hovered'); // 添加鼠标悬停样式
+                });
+
+                cntNode.addEventListener('mouseleave', () => {
+                    cntNode.classList.remove('hovered'); // 移除鼠标悬停样式
+                });
+            }
+        }
+
+
+    }
+
+
+    function renderOptions(data) {
+        var selectElement = document.getElementById("aweme-select");
+        removeChilds(selectElement)
+        for (var i = 0; i < data.length; i++) {
+            var option = document.createElement("option");
+            option.value = data[i].awemeId;
+            option.text = data[i].titleInfo;
+            selectElement.appendChild(option);
+        }
+    }
+
+    function getSelectedAwemeId() {
+        var selectElement = document.getElementById("aweme-select");
+        const selectedAwemeIds = [];
+        for (let i = 0; i < selectElement.options.length; i++) {
+            if (selectElement.options[i].selected) {
+                selectedAwemeIds.push(selectElement.options[i].value);
+            }
+        }
+        // var selectedAwemeId = selectElement.value;
+        return selectedAwemeIds
+        // analyzer(selectedAwemeId)
+    }
+    function renderTotals(totals){
+        var totalsdiv = document.getElementById("totals");
+        var h2e = document.createElement("h2");
+        h2e.textContent="数据总数: 【 "+totals+" 】";
+        h2e.style.textAlign="center";
+        totalsdiv.appendChild(h2e)
+        totalsdiv.style.display="block"
+    }
+    function createWordCloud(imgURL,dataList){
+        // 创建img标签
+        var img = document.createElement("img");
+        // 设置src属性
+        img.src = "./imgs/" + imgURL;
+        img.width = 600;
+        img.height = 1000;
+        var container = document.getElementById("imageContainer");
+
+        // 清除已有的子元素
+        while (container.firstChild) {
+            if (container.firstChild.tagName !== 'h4') {
+                container.removeChild(container.firstChild);
+            } else {
+                container = container.firstChild;
+            }
+
+        }
+
+        // 创建左侧数据的容器
+        var leftDataContainer = document.createElement("div");
+        leftDataContainer.className = "left-data";
+        container.appendChild(leftDataContainer);
+
+        // 创建右侧数据的容器
+        var rightDataContainer = document.createElement("div");
+        rightDataContainer.className = "right-data";
+        container.appendChild(rightDataContainer);
+
+        // 分割数据为左右两侧各10条
+        var leftData = dataList.slice(0, 10);
+        var rightData = dataList.slice(10, 20);
+
+        // 生成左侧数据的HTML代码
+        var leftDataHTML = '<h4>TOP10</h4>' + leftData.map(function(data) {
+            return '<p>' + data + '</p>';
+        }).join('');
+
+
+        leftDataContainer.innerHTML = leftDataHTML;
+        // 生成右侧数据的HTML代码
+        var rightDataHTML = '<h4>TOP10-20</h4>' + rightData.map(function(data) {
+            return '<p>' + data + '</p>';
+        }).join('');
+
+
+        // var rightDataHTML = rightData.map(function(data) {
+        //     return '<p>' + data + '</p>';
+        // }).join('');
+        rightDataContainer.innerHTML=rightDataHTML
+
+        // 将img标签添加到容器中
+        container.insertBefore(img, rightDataContainer);
+
+    }
+    function createAnalyzer(imgURL,dataList){
+        // 创建img标签
+        var img = document.createElement("img");
+        // 设置src属性
+        img.src = "./imgs/" + imgURL;
+        img.width = 600;
+        img.height = 1000;
+
+        var selectElement = document.getElementById("aweme-select");
+        var aid = selectElement.value;
+        // 获取imageContainer元素
+        var container = document.getElementById("imageContainer");
+
+        // 清除已有的子元素
+        while (container.firstChild) {
+            if (container.firstChild.tagName !== 'h4') {
+                container.removeChild(container.firstChild);
+            } else {
+                container = container.firstChild;
+            }
+
+        }
+
+        // 创建左侧数据的容器
+        var leftDataContainer = document.createElement("div");
+        leftDataContainer.className = "left-data";
+        container.appendChild(leftDataContainer);
+
+        // 创建右侧数据的容器
+        var rightDataContainer = document.createElement("div");
+        rightDataContainer.className = "right-data";
+        container.appendChild(rightDataContainer);
+
+        // 分割数据为左右两侧各10条
+        var leftData = dataList.slice(0, 10);
+        var rightData = dataList.slice(10, 20);
+
+        // 生成左侧数据的HTML代码
+        // var leftDataHTML = '<h4>TOP10</h4>' + leftData.map(function(data) {
+        //     return '<p>' + data + '</p>';
+        // }).join('');
+        var leftDataHTML = '<h4>TOP10</h4>' + leftData.map(function(data) {
+            text=data.split(":")[0].trim();
+            var searchParams = 'searchType=1&searchMsg=' + encodeURIComponent(text)+'&awemeId='+encodeURIComponent(aid);
+            return '<p><a target="_blank" href="/commentList.html?' + searchParams + '">' + data + '</a></p>';
+        }).join('');
+
+        leftDataContainer.innerHTML = leftDataHTML;
+        // 生成右侧数据的HTML代码
+        // var rightDataHTML = '<h4>TOP10-20</h4>' + rightData.map(function(data) {
+        //     return '<p>' + data + '</p>';
+        // }).join('');
+        var rightDataHTML = '<h4>TOP10-20</h4>' + rightData.map(function(data) {
+            text=data.split(":")[0].trim();
+
+            var searchParams = 'searchType=1&searchMsg=' + encodeURIComponent(text)+'&awemeId='+encodeURIComponent(aid);
+            return '<p><a target="_blank" href="/commentList.html?' + searchParams + '">' + data + '</a></p>';
+        }).join('');
+
+        // var rightDataHTML = rightData.map(function(data) {
+        //     return '<p>' + data + '</p>';
+        // }).join('');
+        rightDataContainer.innerHTML=rightDataHTML
+
+        // 将img标签添加到容器中
+        container.insertBefore(img, rightDataContainer);
+    }
+    function createImage(imgURL) {
+        // 清除已有的img元素
+        var container = document.getElementById("imageContainer");
+        while (container.firstChild) {
+            container.removeChild(container.firstChild);
+        }
+        // 创建img标签
+        var img = document.createElement("img");
+        // 设置src属性
+        img.src = "./imgs/"+imgURL;
+        img.width=600
+        img.height=1000
+        // 将img标签添加到页面中的某个元素中
+        var container = document.getElementById("imageContainer"); // 替换为实际的容器元素ID
+        container.appendChild(img);
+    }
+
+    function analyzer(aids) {
+        var loadingOverlay = document.getElementById("loadingOverlay");
+        loadingOverlay.style.display = "flex"; // 显示遮罩层
+        axios.get("/analyezer",
+            {
+                params: {
+                    aids: aids.join(',')
+                }
+            }).then((res) => {
+            if (res.data.success) {
+                var imgSrc = res.data.data.wordCloudUrl;
+                var topWords = res.data.data.topWords;
+                var dateResult = res.data.data.dateResult;
+                var ipResult = res.data.data.ipResult;
+                var usersResult = res.data.data.usersResult;
+                if (aids.length==1){
+                    var aid=aids[0]
+                    createAnalyzer(imgSrc,topWords)
+                    buildTree(dateResult,aid)
+                    renderIpmsg(aid,ipResult.noChinas,ipResult.ipModels)
+                }else {
+                    const top20 = document.getElementById("top20-one-minute");
+                    top20.style.display= "none"
+                    createWordCloud(imgSrc,topWords)
+                    renderIpmsg(0,ipResult.noChinas,ipResult.ipModels)
+                    buildUserTree(usersResult.map)
+                    var totals = res.data.data.totals;
+                    renderTotals(totals)
+                }
+
+                // createImage(imgSrc);
+                // createTopWords(topWords)
+            }
+        })
+            .catch((error) => {
+                if (error == "Error: Request failed with status code 403") {
+                    alert("无操作权限");
+                }
+            })
+            .finally(() => {
+                loadingOverlay.style.display = "none"; // 隐藏遮罩层
+            });
+    }
+
+    function createTopWords(dataList){
+        // 分割数据为左右两侧各10条
+        var leftData = dataList.slice(0, 10);
+        var rightData = dataList.slice(10, 20);
+
+        // 生成左侧数据的HTML代码
+        var leftDataHTML = leftData.map(function(data) {
+            return '<p>' + data + '</p>';
+        }).join('');
+
+        // 生成右侧数据的HTML代码
+        var rightDataHTML = rightData.map(function(data) {
+            return '<p>' + data + '</p>';
+        }).join('');
+
+        // 将生成的HTML代码插入到对应位置
+        document.querySelector('#imageContainer .left-data').innerHTML = leftDataHTML;
+        document.querySelector('#imageContainer .right-data').innerHTML = rightDataHTML;
+    }
+
+    function showLoadingIndicator() {
+        // 创建加载等待元素，例如一个旋转的图标或者文字提示
+        var loadingElement = document.createElement("div");
+        // 添加样式、设置内容等
+        // ...
+
+        // 将加载等待元素添加到页面中的某个容器中
+        var container = document.getElementById("loadingContainer"); // 替换为实际的容器元素ID
+        container.appendChild(loadingElement);
+    }
+
+    function hideLoadingIndicator() {
+        // 移除加载等待元素
+        var container = document.getElementById("loadingContainer"); // 替换为实际的容器元素ID
+        container.innerHTML = "";
+    }
+</script>
+
+</body>
+</html>

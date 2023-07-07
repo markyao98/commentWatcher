@@ -1,0 +1,30 @@
+<!--<?xml version="1.0" encoding="UTF-8" ?>-->
+<!--<dubbo>-->
+<!--    <application>-->
+<!--        <name></name>-->
+<!--        <host></host>-->
+<!--        <port></port>-->
+<!--        <weight></weight>-->
+<!--    </application>-->
+
+<!--    <registry>-->
+<!--        <redis>-->
+<!--            <host></host>-->
+<!--            <port></port>-->
+<!--            <db></db>-->
+<!--            <password></password>-->
+<!--            <maxtotal></maxtotal>-->
+<!--        </redis>-->
+<!--    </registry>-->
+
+<!--    <serviceProvider>-->
+<!--        <interfaceName>publicInterface.HelloService</interfaceName>-->
+<!--        <implClass>MicroRpc.framework.beans.MicroRpc.provider.HelloServiceImpl</implClass>-->
+<!--    </serviceProvider>-->
+
+<!--    <serviceProvider>-->
+<!--        <interfaceName>publicInterface.HiService</interfaceName>-->
+<!--        <implClass>MicroRpc.framework.beans.MicroRpc.provider.HiServiceImpl</implClass>-->
+<!--    </serviceProvider>-->
+
+<!--</dubbo>-->

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<dubbo>
+
+    <application>
+        <name>app-admin</name>
+        <host>127.0.0.1</host>
+        <port>17001</port>
+        <weight>1</weight>
+    </application>
+
+<!--    <registry>-->
+<!--        <redis>-->
+<!--            <host>127.0.0.1</host>-->
+<!--            <port>9527</port>-->
+<!--            <db>0</db>-->
+<!--        </redis>-->
+<!--    </registry>-->
+
+<!--    <serviceProvider>-->
+<!--        <interfaceName>publicInterface.HelloService</interfaceName>-->
+<!--        <implClass>com.markyao.rpc.provider.HelloServiceImpl</implClass>-->
+<!--    </serviceProvider>-->
+
+<!--    <serviceProvider>-->
+<!--        <interfaceName>publicInterface.test.TestService</interfaceName>-->
+<!--        <implClass>com.markyao.test.provider.TestServiceImpl</implClass>-->
+<!--    </serviceProvider>-->
+
+<!--    <serviceProvider>-->
+<!--        <interfaceName>publicInterface.test.TestRpcIndexService</interfaceName>-->
+<!--        <implClass>com.markyao.test.provider.TestRpcIndexServiceImpl</implClass>-->
+<!--    </serviceProvider>-->
+
+
+</dubbo>

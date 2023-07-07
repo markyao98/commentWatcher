@@ -1,0 +1,79 @@
+PUT /dy_comments/_mapping
+{
+  "properties":{
+    "id":{
+      "type":"long"
+    },
+    "userId":{
+      "type":"long"
+    },
+    "userSecUid":{
+      "type":"keyword"
+    },
+    "userAvatar":{
+      "type":"keyword"
+    },
+    "userRegion":{
+      "type":"keyword"
+    },
+    "userLanguage":{
+      "type":"keyword"
+    },
+    "userNickname":{
+      "type":"keyword"
+    },
+    "userUserAge":{
+      "type":"integer"
+    },
+    "detailId":{
+      "type":"long"
+    },
+     "detailAwemeId":{
+      "type":"keyword"
+    },
+     "detailCid":{
+      "type":"keyword"
+    },
+     "detailIpLabel":{
+      "type":"keyword"
+    },
+    "detailCreateTime":{
+      "type":"date"
+    },
+     "detailDiggCount":{
+      "type":"integer"
+    },
+     "detailReplyCommentTotal":{
+      "type":"integer"
+    },
+     "detailText":{
+      "type":"text",
+      "analyzer": "ik_max_word",
+      "fields": {
+        "suggest":{
+          "type": "completion",
+          "analyzer": "ik_max_word"
+        }
+      }
+    },
+     "videoTitle":{
+      "type":"text",
+      "analyzer": "ik_max_word",
+      "fields": {
+        "suggest":{
+          "type": "completion",
+          "analyzer": "ik_max_word"
+        }
+      }
+    },
+     "detailIsAuthorDigged":{
+      "type":"boolean"
+    },
+    "detailCur":{
+      "type":"integer"
+    },
+    "detailCount":{
+      "type":"integer"
+    }
+  }
+}

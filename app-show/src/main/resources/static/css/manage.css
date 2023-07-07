@@ -1,0 +1,83 @@
+#groupSelect{
+    width: 300px;
+}
+#videoList{
+    width: 800px;
+}
+
+.popup-form {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    padding: 20px;
+    border: 1px solid #ccc;
+    z-index: 9999;
+}
+.h-title{
+    text-align: center;
+}
+.page-01{
+    /*display: flex;*/
+}
+.page-left{
+    /*flex: 1;*/
+}
+.page-right{
+    display: flex;
+    /*flex: 1;*/
+}
+
+.page-right ul {
+    list-style: none;
+    flex: 1;
+    /*padding: 0;*/
+}
+
+/*.page-right li {*/
+/*    margin-bottom: 10px;*/
+/*}*/
+
+.group-img {
+    border: 2px solid #888888;
+    width: 180px;
+    height: 180px;
+    /*border-radius: 50%;*/
+    margin-right: 10px;
+}
+
+#group-title {
+    font-weight: bold;
+    font-size: 18px;
+}
+
+#group-desc {
+    font-size: 14px;
+    color: gray;
+    margin-left: 10px;
+}
+#right-card{
+    /*width: 100%;*/
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    /*margin: 20px;*/
+    display: flex;
+    /*flex-direction: column;*/
+    align-items: center;
+}
+#group-info{
+    display: flex;
+    flex:1;
+    /*align-items: center;*/
+}
+
+#group-videos{
+    list-style: disc;
+    flex:1;
+
+}
+#formContainer{
+    display: none;
+}

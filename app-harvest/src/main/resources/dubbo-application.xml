@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<dubbo>
+
+    <application>
+        <name>app-harvest</name>
+        <host>127.0.0.1</host>
+        <port>17002</port>
+        <weight>1</weight>
+    </application>
+
+
+
+    <serviceProvider>
+        <interfaceName>publicInterface.HelloService</interfaceName>
+        <implClass>com.markyao.rpc.impl.HelloServiceImpl</implClass>
+    </serviceProvider>
+
+
+</dubbo>

@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>评论列表</title>
+
+    <link rel="stylesheet" type="text/css" href="./css/sidebar.css">
+    <link rel="stylesheet" type="text/css" href="./css/commentlist.css">
+    <link rel="stylesheet" type="text/css" href="./css/manage.css">
+    <script src="./js/sidebar.js"></script>
+
+    <!-- 引入 jQuery 库 -->
+    <script src="https://cdn.staticfile.org/jquery/3.5.1/jquery.min.js"></script>
+    <!-- 引入 Bootstrap 的 JS 文件 -->
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/4.5.3/js/bootstrap.min.js"></script>
+    <!-- 引入 Bootstrap 的 CSS 文件 -->
+    <!--    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.5.3/css/bootstrap.min.css">-->
+
+    <link rel="stylesheet" href="css/custom-styles.css">
+    <link rel="stylesheet" href="css/highlight.css">
+
+
+</head>
+<style>
+    /* 标题栏样式 */
+    .header {
+        /*height: 50px;*/
+        text-align: center;
+        font-size: 24px;
+        line-height: 50px;
+        background-color: #555;
+        color: white;
+        padding: 20px;
+    }
+
+    /* 容器样式 */
+    .container {
+        display: flex;
+        flex-direction: row;
+        height: calc(100vh - 50px); /* 让容器填满剩余的空间 */
+    }
+
+    /* 默认状态下的样式 */
+    img {
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+    }
+
+    /* 鼠标悬停时的样式 */
+    img:hover {
+        transform: scale(2.2);
+    }
+
+    .card {
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-shadow: 2px 2px 5px #ccc;
+    }
+
+    .title {
+        font-size: 15px;
+        font-weight: bold;
+        color: cadetblue;
+        margin-bottom: 10px;
+    }
+
+    .info {
+        margin-bottom: 5px;
+    }
+
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+    .loading-message {
+        color: #fff;
+        font-size: 24px;
+    }
+</style>
+<body>
+
+<div class="header">
+    <h1 style="text-align: center">Dy数据收集系统-评论列表</h1>
+    <span>          作者————@他看到了自己</span>
+
+</div>
+
+<div class="container">
+
+    <div id="sidebar">
+        <ul>
+            <li><a href="./commentList.html">评论列表</a></li>
+            <li><a href="./harvest.html">数据采集器</a></li>
+            <li><a href="./anayazer.html">数据分析器</a></li>
+            <li><a href="./manage.html">管理页</a></li>
+
+        </ul>
+    </div>
+
+
+    <div id="page-container">
+        <select id="groupSelect" class="custom-select">
+            <option value="-1">请选择分组</option>
+        </select>
+        <button onclick="selectGroup()">确认分组</button>
+        <select style="width: 400px" class="custom-select" id="aweme-select" onchange="getSelectedAwemeId()">
+            <option value="">请选择视频</option>
+        </select>
+
+        <div id="right-card" style="display: none" class="page-right">
+            <ul id="group-info">
+                <li id="group-img"></li>
+                <li id="group-title">分组标题</li>
+                <li id="group-desc">分组描述信息..</li>
+            </ul>
+        </div>
+
+
+        <div class="card">
+            <div id="aid" style="display: none"></div>
+            <h2 style="text-align: center">视频主题</h2>
+            <div class="title" id="video_title_info"></div>
+            <h2 style="text-align: center">视频链接</h2>
+            <div ><a id="video_watch_link" target="_blank" href="#">点我看看</a></div>
+        </div>
+
+        <h3>总共<strong id="totalData"></strong>条数据</h3>
+        <button onclick="updateStatus()">更新视频点赞量状态</button>
+        <button onclick="refresh()">刷新</button><br><br>
+       <br><br>
+        <select style="width: 200px" class="custom-select" id="search-type-select">
+            <option value="0">搜索类型</option>
+            <option value="1">内容搜索</option>
+            <option value="2">id搜索</option>
+            <option value="3">ip信息搜索</option>
+            <option value="4">时间段搜索</option>
+        </select>
+        <input id="searchMsg">
+        <button onclick="search()">点击搜索</button>
+
+        <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+            <span class="loading-message">正在更新视频状态...</span>
+        </div>
+        <span style="display:none;" id="sortRet" value="1">1</span>
+
+        <div id="table-container">
+            <div id="sort-vlaue" style="display: none"></div>
+            <table  id="comment-table" class="display">
+                <colgroup>
+                    <col style="width: 10%;">
+                    <col style="width: 22%;">
+                    <col style="width: 5%;">
+                    <col style="width: 5%;">
+                    <col style="width: 5%;">
+                    <col style="width: 8%;">
+                    <col style="width: 5%;">
+                    <col style="width: 8%;">
+                    <col style="width: 15%;">
+                    <col style="width: 8%;">
+                    <col style="width: 5%;">
+                    <col style="width: 5%;">
+                    <col style="width: 8%;">
+                </colgroup>
+                <thead>
+                <tr>
+                    <th style="display:none;" id="id">id</th>
+                    <th id="nickname">用户昵称</th>
+                    <th id="text">评论内容</th>
+                    <th id="userCardLink">用户主页</th>
+                    <th id="avatar">头像</th>
+                    <th id="region">注册地</th>
+                    <th id="language">注册语言</th>
+                    <th id="userAge">年龄</th>
+                    <th onclick="ipSort()" id="ipLabel">ip归属地</th>
+                    <th onclick="timeSort()" id="createTime">评论时间</th>
+                    <th onclick="diggSort()" id="diggCount">点赞</th>
+                    <th onclick="replySort()" id="replyCommentTotal">回复</th>
+                    <th id="isAuthorDigged">作者赞过</th>
+                    <th id="isMonitored">观察结果</th>
+                </tr>
+                </thead>
+                <tbody>
+                </tbody>
+
+
+            </table>
+
+        </div>
+        <div id="pagination-container">
+            <button id="first-page-btn">&lt;&lt; 第一页</button>
+            <button id="prev-page-btn">&lt; 上一页</button>
+            <span id="page-numbers"></span>
+            <button id="next-page-btn" >下一页 &gt;</button>
+            <button id="last-page-btn">最后一页 &gt;&gt;</button>
+            <label for="page-input">跳转到第</label>
+            <input type="number" id="page-input" min="1" max="100" value="1">
+            <label for="page-input">页</label>
+            <button id="go-to-page-btn">跳转</button>
+        </div>
+    </div>
+</div>
+<script src="./js/axios-0.18.0.js"></script>
+
+
+
+<script>
+    var currentPage=1;
+    var pageSize=10;
+    var total=0;
+    var totalPages=0;
+
+    function getVideoGroups(){
+        axios.get("/index/groups").then((res)=>{
+            if (res.data.success){
+                var groupList=res.data.data
+                renderGroupList(groupList)
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+    }
+    function selectGroup(){
+        var selectElement = document.getElementById("groupSelect");
+        var id=selectElement.value
+        byGroup(1,id)
+        renderRightCard(id)
+
+    }
+    function updateStatus(){
+        var loadingOverlay = document.getElementById("loadingOverlay");
+        loadingOverlay.style.display = "flex"; // 显示遮罩层
+
+        var selectElement = document.getElementById("aweme-select");
+        var aid = selectElement.value;
+        axios.get("/comments/updateStatus/"+aid).then((res)=>{
+            if (res.data.success){
+                alert(res.data.msg)
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        }).finally(() => {
+            loadingOverlay.style.display = "none"; // 隐藏遮罩层
+        });;
+    }
+    function refresh(){
+        var selectElement = document.getElementById("aweme-select");
+        var aid = selectElement.value;
+        gotoPage(1,aid);
+    }
+    function byGroup(current,data){
+        axios.get("group/byG/"+data).then((res)=>{
+            if (res.data.success){
+                var videoList=res.data.data
+                renderOptionsContainVideoList(videoList)
+                var aids=new Array(videoList.length)
+                for (var i = 0; i < videoList.length; i++) {
+                    aids[i] = videoList[i].awemeId;
+                }
+                gotoPage(current,aids)
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+    }
+    function renderRightCard(id){
+        axios.get("groupinfo/"+id).then((res)=>{
+            var imgLi = document.getElementById("group-img");
+            removeChilds(imgLi)
+            if (res.data.success){
+                var groupinfo=res.data.data
+
+                var title=groupinfo.title;
+                var desc=groupinfo.descMsg;
+                var rc = document.getElementById("right-card");
+
+                var imgE = document.createElement("img");
+                imgE.src="./groupsImg/" +groupinfo.img;
+                imgE.classList.add("group-img");
+                imgLi.appendChild(imgE)
+                var gt = document.getElementById("group-title");
+                gt.innerText=title
+                var gd = document.getElementById("group-desc");
+                gd.innerText=desc
+                rc.style.display = rc.style.display== 'none' ? 'block' : 'none';
+            }
+        }).catch((error)=>{
+            if (error == "Error: Request failed with status code 403"){
+                alert("无操作权限")
+            }
+        });
+
+
+    }
+    function removeChildsNoFirst(ele){
+        const childNodes = ele.childNodes;
+
+        // 循环遍历所有子节点并删除
+        for (let i = childNodes.length - 1; i > 0; i--) {
+            ele.removeChild(childNodes[i]);
+        }
+    }
+    function removeChilds(ele){
+        const childNodes = ele.childNodes;
+
+        // 循环遍历所有子节点并删除
+        for (let i = childNodes.length - 1; i >= 0; i--) {
+            ele.removeChild(childNodes[i]);
+        }
+    }
+    function renderOptionsContainVideoList(vList){
+        renderOptions(vList)
+    }
+    function renderGroupList(data) {
+        var selectElement = document.getElementById("groupSelect");
+        removeChilds(selectElement)
+        for (var i = 0; i < data.length; i++) {
+            var option = document.createElement("option");
+            option.value = data[i].id;
+            option.text = data[i].title;
+            selectElement.appendChild(option);
+        }
+    }
+
+    window.onload=function (){
+        gotoPage(1,"");
+        getVideoGroups()
+        readyPagination()
+        // 在目标页面获取参数值
+        var urlParams = new URLSearchParams(window.location.search);
+        if (urlParams!=null){
+            var searchType = urlParams.get('searchType');
+            var searchMsg = urlParams.get('searchMsg');
+            var awemeId = urlParams.get('awemeId');
+            setTimeout(() => {
+                var aselect = document.getElementById("aweme-select");
+                aselect.value = awemeId;
+            }, 1500); // 在这里设置等待的时间，单位为毫秒
+
+            var aselect = document.getElementById("aweme-select");
+            aselect.value=awemeId;
+
+
+            var selectElement = document.getElementById("search-type-select");
+            selectElement.value=searchType;
+
+            var searchMsgEle = document.getElementById("searchMsg");
+            searchMsgEle.value=searchMsg
+
+            gotoPage(1,awemeId)
+            // var selectedAwemeId = selectElement.value;
+        }
+
+    }
+    function updateSortRet(){
+        var e = document.getElementById("sortRet");
+        if (e.innerText=="1"){
+            e.innerText="2"
+        }else {
+            e.innerText="1"
+        }
+    }
+    function getSortRet(){
+        var e = document.getElementById("sortRet");
+        return e.innerText
+    }
+    function ipSort(){
+        updateSortRet();
+
+        var sortDiv = document.getElementById("sort-vlaue");
+        sortDiv.value=1
+
+        helpPages(1)
+    }
+    function timeSort(){
+        updateSortRet();
+
+
+        var sortDiv = document.getElementById("sort-vlaue");
+        sortDiv.value=2
+        helpPages(1)
+    }
+    function diggSort(){
+        updateSortRet();
+
+
+        var sortDiv = document.getElementById("sort-vlaue");
+        sortDiv.value=3
+        helpPages(1)
+        // gotoPage(1,selectedAwemeId)
+    }
+    function replySort(){
+        updateSortRet();
+
+
+        var sortDiv = document.getElementById("sort-vlaue");
+        sortDiv.value=4
+        helpPages(1)
+        // gotoPage(1,selectedAwemeId)
+    }
+
+    function search(){
+        var selectElement = document.getElementById("aweme-select");
+        var selectedAwemeId = selectElement.value;
+        if (!selectedAwemeId || selectedAwemeId=="-1"){
+            var selectElement = document.getElementById("groupSelect");
+            if (selectElement){
+                var id=selectElement.value
+                byGroup(1,id)
+            }
+            else {
+                gotoPage(1,"null")
+            }
+
+        }else {
+            gotoPage(1,selectedAwemeId)
+        }
+    }
+    /*
+        function getGroups(){
+
+            axios.get("/index").then((res)=>{
+                if (res.data.success){
+                    var videoVos=res.data.data
+                    renderOptions(videoVos)
+                    console.log(videoVos)
+
+                }
+            }).catch((error)=>{
+                if (error == "Error: Request failed with status code 403"){
+                    alert("无操作权限")
+                }
+            });
+        }
+    */
+
+
+    function renderOptions(data) {
+        var selectElement = document.getElementById("aweme-select");
+        removeChilds(selectElement)
+        var option0 = document.createElement("option");
+        option0.value = -1;
+        option0.text = "请选择视频";
+        selectElement.appendChild(option0);
+        for (var i = 0; i < data.length; i++) {
+            var option = document.createElement("option");
+            option.value = data[i].awemeId;
+            option.text = data[i].titleInfo;
+            selectElement.appendChild(option);
+        }
+    }
+
+    function getSelectedAwemeId() {
+        var selectElement = document.getElementById("aweme-select");
+        var selectedAwemeId = selectElement.value;
+        gotoPage(1,selectedAwemeId)
+
+    }
+
+    function createCard(data) {
+        var awemeIdElement = document.getElementById("aid");
+        // var idElement = document.getElementById("video_watch_link");
+        // 获取元素
+        var titleElement = document.getElementById("video_title_info");
+        var watchLinkElement = document.getElementById("video_watch_link");
+
+        awemeIdElement.innerText = "";
+        // idElement.innerText = "";
+        titleElement.innerText = "";
+        watchLinkElement.href="";
+        // watchLinkElement.innerText = "";
+
+        awemeIdElement.innerText=data.awemeId
+        titleElement.innerText=data.titleInfo
+        watchLinkElement.href=data.watchLink
+    }
+    function helpPages(currentPage){
+        var selectElement = document.getElementById("aweme-select");
+        var selectedAwemeId = selectElement.value;
+        if (!selectedAwemeId || selectedAwemeId=="-1"){
+            var selectElement = document.getElementById("groupSelect");
+            if (selectElement){
+                var id=selectElement.value
+                byGroup(currentPage,id)
+            }
+            else {
+                gotoPage(currentPage,"null")
+            }
+
+        }else {
+            gotoPage(currentPage,selectedAwemeId)
+        }
+    }
+    function readyPagination(){
+        // 获取所有按钮元素
+        var firstPageBtn = document.getElementById("first-page-btn");
+        var prevPageBtn = document.getElementById("prev-page-btn");
+        var nextPageBtn = document.getElementById("next-page-btn");
+        var lastPageBtn = document.getElementById("last-page-btn");
+        var goToPageBtn = document.getElementById("go-to-page-btn");
+
+        // 获取页码输入框元素
+        var pageInput = document.getElementById("page-input");
+
+
+        // 为第一页按钮添加点击事件监听器
+        firstPageBtn.addEventListener("click", function() {
+            // 调用gotoPage函数并传递1作为参数
+            currentPage=1;
+            document.getElementById("page-input").value=currentPage
+
+            helpPages(currentPage)
+            // var aid=document.getElementById("aid").innerText
+            // gotoPage(1,aid);
+        });
+
+        // 为上一页按钮添加点击事件监听器
+        prevPageBtn.addEventListener("click", function() {
+            if (currentPage > 1) {
+                // 调用gotoPage函数并传递前一页码作为参数
+                currentPage-=1;
+                document.getElementById("page-input").value=currentPage
+
+                helpPages(currentPage)
+                // var aid=document.getElementById("aid").innerText
+                // gotoPage(currentPage,aid);
+            }
+        });
+
+        // 为下一页按钮添加点击事件监听器
+        nextPageBtn.addEventListener("click", function() {
+            var totalPages=document.getElementById('totalData').textContent;
+            if (currentPage < totalPages) {
+                // 调用gotoPage函数并传递后一页码作为参数
+                currentPage+=1;
+                document.getElementById("page-input").value=currentPage
+                // var aid=document.getElementById("aid").innerText
+                helpPages(currentPage)
+            }
+        });
+
+        // 为最后一页按钮添加点击事件监听器
+        lastPageBtn.addEventListener("click", function() {
+            // 调用gotoPage函数并传递100作为参数
+            var totals=document.getElementById('totalData').textContent;
+            var totalPage=Math.floor(totals/10)+1;
+            currentPage=totalPage;
+            document.getElementById("page-input").value=currentPage
+
+            helpPages(totalPages)
+            // var aid=document.getElementById("aid").innerText
+            // gotoPage(totalPages,aid);
+        });
+
+        // 为跳转按钮添加点击事件监听器
+        goToPageBtn.addEventListener("click", function() {
+            // 获取输入框中的页码
+            var totals=document.getElementById('totalData').textContent;
+            var totalPage=totals/10+1;
+            var page = parseInt(pageInput.value);
+            if (page >= 1 && page <= totalPage) {
+                // 调用gotoPage函数并传递输入框中的页码作为参数
+                currentPage=page;
+                document.getElementById("page-input").value=page
+                var aid=document.getElementById("aid").innerText
+                gotoPage(page,aid);
+            }
+        });
+
+
+    }
+
+
+    //渲染表格数据
+    function renderTableData(data) {
+        // 获取表格主体
+        const tbody = document.querySelector('#comment-table tbody');
+
+        // 清空表格主体
+        tbody.innerHTML = '';
+
+        // 遍历数据并渲染到表格中
+        for (let i = 0; i < data.length; i++) {
+            const comment = data[i];
+
+            // 创建表格行
+            const row = document.createElement('tr');
+            // 创建表格单元格
+            const idCell = document.createElement('td');
+            idCell.style="display:none;"
+            const textCell = document.createElement('td');
+            textCell.setAttribute("class","ellipsis")
+            const userCardLinkCell = document.createElement('td');
+            const avatarCell = document.createElement('td');
+            const regionCell = document.createElement('td');
+            const languageCell = document.createElement('td');
+            const nicknameCell = document.createElement('td');
+            const userAgeCell = document.createElement('td');
+            const ipLabelCell = document.createElement('td');
+            const createTimeCell = document.createElement('td');
+            createTimeCell.setAttribute("class","ellipsis")
+
+            const diggCountCell = document.createElement('td');
+            const replyCommentTotalCell = document.createElement('td');
+            const isAuthorDiggedCell = document.createElement('td');
+            const isMonitoredCell = document.createElement('td');
+
+            // 将数据填充到单元格中
+            idCell.textContent = comment.id;
+
+            textCell.innerHTML = comment.commentDetails.text;
+            var ismonitor=comment.isMonitored
+
+            if(ismonitor==true){
+                const a = document.createElement('a');
+                var did=comment.commentDetails.id;
+                a.href = "/echartShow.html?did="+did+"&text="+encodeURIComponent(comment.commentDetails.text);
+                a.textContent = "看";
+                a.target="_blank";
+                isMonitoredCell.appendChild(a);
+            }else {
+                isMonitoredCell.textContent="未监控"
+            }
+
+            const a = document.createElement('a');
+            a.href = comment.userCardLink;
+            a.textContent = "去看看";
+            a.target="_blank";
+            userCardLinkCell.appendChild(a);
+
+            var commentUser=comment.commentUserVo
+            if (!commentUser){
+                commentUser=comment.commentUser
+            }
+            const img = document.createElement('img');
+            img.src = commentUser.avatar;
+            img.style.borderRadius = '50%';  // 设置圆形状
+            img.style.width = '40px';  // 设置宽度为30像素
+            img.style.height = '40px'; // 设置高度为30像素
+            img.addEventListener('mouseover', function() {
+                img.style.transform = 'scale(2.2)';
+            });
+
+            img.addEventListener('mouseout', function() {
+                img.style.transform = 'scale(1)';
+            });
+            avatarCell.appendChild(img);
+
+            regionCell.textContent = commentUser.region;
+            languageCell.textContent = commentUser.language;
+            nicknameCell.textContent = commentUser.nickname;
+            userAgeCell.textContent = commentUser.userAge;
+            ipLabelCell.textContent = comment.commentDetails.ipLabel;
+            createTimeCell.textContent = comment.commentDetails.createTime;
+            diggCountCell.textContent = comment.commentDetails.diggCount;
+            replyCommentTotalCell.textContent = comment.commentDetails.replyCommentTotal;
+            isAuthorDiggedCell.textContent = comment.commentDetails.isAuthorDigged;
+
+            createTimeCell.style.width="200px"
+
+            // 将单元格添加到行中
+            row.appendChild(idCell);
+            row.appendChild(nicknameCell);
+            row.appendChild(textCell);
+            row.appendChild(userCardLinkCell);
+            row.appendChild(avatarCell);
+            row.appendChild(regionCell);
+            row.appendChild(languageCell);
+            row.appendChild(userAgeCell);
+            row.appendChild(ipLabelCell);
+            row.appendChild(createTimeCell);
+            row.appendChild(diggCountCell);
+            row.appendChild(replyCommentTotalCell);
+            row.appendChild(isAuthorDiggedCell);
+            row.appendChild(isMonitoredCell);
+
+            // 将行添加到表格主体中
+            tbody.appendChild(row);
+        }
+    }
+
+    //发送请求获取数据
+    function gotoPage(page,aid){
+        var that=this
+        if (!aid){
+            aid="null"
+        }
+        var selectElement = document.getElementById("search-type-select");
+        var selectedType = selectElement.value;
+
+        var searchMsg = document.getElementById("searchMsg").value;
+
+        var sortDiv = document.getElementById("sort-vlaue");
+        sortType=sortDiv.value
+        var sortRet=getSortRet()
+        console.log(sortRet+"  ....")
+        if (aid instanceof Array){
+            axios.get("/comments/list2"+"?awemeIds="+aid+"&page="+page+"&pageSize="+pageSize+
+                "&searchType="+selectedType+"&searchMsg="+searchMsg+"&sortType="+sortType+"&sortRet="+sortRet).then((res)=>{
+                if (res.data.success){
+                    var commentVoList=res.data.data.list
+                    var videoInfo=res.data.data.info
+                    if (videoInfo){
+                        createCard(videoInfo)
+                    }
+
+                    // that.total=res.data.data.totals
+                    // that.totalPages=res.data.data.totalPages
+                    var strongEl = document.getElementById('totalData');
+                    strongEl.textContent=res.data.data.totals
+                    renderTableData(commentVoList)
+                    initTables()
+                }
+            }).catch((error)=>{
+                if (error == "Error: Request failed with status code 403"){
+                    alert("无操作权限")
+                }
+            });
+        }
+        else {
+            axios.get("/comments/list/"+aid+"?page="+page+"&pageSize="+pageSize+
+                "&searchType="+selectedType+"&searchMsg="+searchMsg+"&sortType="+sortType+"&sortRet="+sortRet).then((res)=>{
+                if (res.data.success){
+                    var commentVoList=res.data.data.list
+                    var videoInfo=res.data.data.info
+                    if (videoInfo){
+                        createCard(videoInfo)
+                    }
+
+                    // that.total=res.data.data.totals
+                    // that.totalPages=res.data.data.totalPages
+                    var strongEl = document.getElementById('totalData');
+                    strongEl.textContent=res.data.data.totals
+                    renderTableData(commentVoList)
+                    initTables()
+                }
+            }).catch((error)=>{
+                if (error == "Error: Request failed with status code 403"){
+                    alert("无操作权限")
+                }
+            });
+        }
+
+
+    }
+
+    function initTables(){
+        const ellipsisCells = document.querySelectorAll('.ellipsis');
+
+        ellipsisCells.forEach((cell) => {
+            cell.addEventListener('mouseenter', () => {
+                const fullText = cell.textContent.trim();
+                const tooltip = document.createElement('div');
+                tooltip.textContent = fullText;
+                tooltip.classList.add('tooltip');
+                cell.appendChild(tooltip);
+
+                const cellRect = cell.getBoundingClientRect();
+                const tooltipRect = tooltip.getBoundingClientRect();
+                const tooltipTop = cellRect.top - tooltipRect.height - 5;
+                const tooltipLeft = cellRect.left + cellRect.width / 2 - tooltipRect.width / 2;
+                tooltip.style.top = `${tooltipTop}px`;
+                tooltip.style.left = `${tooltipLeft}px`;
+            });
+
+            cell.addEventListener('mouseleave', () => {
+                const tooltip = cell.querySelector('.tooltip');
+                if (tooltip) {
+                    tooltip.remove();
+                }
+            });
+        });
+
+    }
+</script>
+
+
+</body>
+</html>

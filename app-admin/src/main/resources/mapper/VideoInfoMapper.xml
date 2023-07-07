@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.markyao.mapper.VideoInfoMapper">
+
+
+    <insert id="insertForId" parameterType="VideoInfo" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO video_info (id,aweme_id,watch_link,title_info)
+        VALUES
+        (0, #{awemeId}, #{watchLink}, #{titleInfo})
+    </insert>
+
+
+</mapper>

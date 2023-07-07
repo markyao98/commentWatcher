@@ -1,0 +1,26 @@
+package com.markyao.model.pojo;
+
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
+import lombok.experimental.Accessors;
+
+import java.io.Serializable;
+import java.util.Date;
+
+@Data
+@TableName("harvest_comment_details")
+@Accessors(chain = true)
+public class CommentDetails implements Serializable {
+    private Long id;
+    private String awemeId;
+    private String cid;
+    private String ipLabel;
+    private Date createTime;
+    private Integer diggCount;
+    private Integer replyCommentTotal;
+    private String text;
+    private Boolean isAuthorDigged;//作者赞过
+    private Integer cur;
+    private Integer count;
+
+}

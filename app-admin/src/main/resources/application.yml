@@ -1,0 +1,23 @@
+server:
+  port: 1701
+mybatis-plus:
+#  configuration:
+#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  type-aliases-package: com.markyao.model.pojo
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/harvest_douyin_yrw?useUnicode=true&&serverTimeZone=UTC
+    username: root
+    password: root
+  main:
+    allow-circular-references: true
+
+douyin:
+  video:
+    searchLinkPrefix: https://www.douyin.com/discover?modal_id=
+  user:
+    cardPrefix: https://www.douyin.com/user/
+
+es:
+  index_1: dy_comments

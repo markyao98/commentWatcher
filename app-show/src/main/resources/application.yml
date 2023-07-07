@@ -1,0 +1,14 @@
+server:
+  port: 1700
+
+#dubbo:
+#  application:
+#    name: app-show
+#  protocol:
+#    name: dubbo
+#    port: -1
+#  registry:
+#    address: zookeeper://${zookeeper.address:127.0.0.1}:2181
+spring:
+  main:
+    allow-circular-references: true

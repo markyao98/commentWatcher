@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.markyao.mapper.VideoGroupMapper">
+
+    <insert id="addVideosForGroup" >
+        INSERT INTO video_info_group (id,group_id,info_id,aid)
+        VALUES
+           <foreach collection="vids" item="vid" separator=",">
+               (0,#{gid},#{vid},0)
+           </foreach>
+    </insert>
+
+</mapper>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<dubbo>
+
+    <application>
+        <name>app-show</name>
+        <host>127.0.0.1</host>
+        <port>17003</port>
+        <weight>1</weight>
+    </application>
+
+<!--    <registry>-->
+<!--        <redis>-->
+<!--            <host>127.0.0.1</host>-->
+<!--            <port>9527</port>-->
+<!--            <db>0</db>-->
+<!--        </redis>-->
+<!--    </registry>-->
+
+<!--    <serviceRefrence>-->
+<!--        <interfaceName>publicInterface.HelloService</interfaceName>-->
+<!--    </serviceRefrence>-->
+
+<!--    <serviceRefrence>-->
+<!--        <interfaceName>publicInterface.test.TestService</interfaceName>-->
+<!--    </serviceRefrence>-->
+
+<!--    <serviceRefrence>-->
+<!--        <interfaceName>publicInterface.test.TestRpcIndexService</interfaceName>-->
+<!--    </serviceRefrence>-->
+
+
+
+</dubbo>
